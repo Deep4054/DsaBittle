@@ -37,12 +37,13 @@ async def global_error_handler(request, exc: Exception):
 # ─────────────────────────────────────────────
 
 async def health(request):
-    """Health check."""
+    """Health check — used by Railway and monitoring."""
     api_key_set = bool(os.getenv("NVIDIA_NIM_API_KEY"))
     return JSONResponse({
-        "status": "running",
+        "status": "healthy",
         "version": "1.0.0",
         "nvidia_nim_configured": api_key_set,
+        "model": "meta/llama-3.3-70b-instruct",
     })
 
 
@@ -102,14 +103,10 @@ app = Starlette(
     middleware=[
         Middleware(
             CORSMiddleware,
-            allow_origins=[
-                "chrome-extension://*",
-                "http://localhost:3000",
-                "http://localhost:5173",
-                "http://127.0.0.1:3000",
-            ],
-            allow_methods=["*"],
+            allow_origins=["*"],   # Chrome extensions require wildcard
+            allow_methods=["GET", "POST", "OPTIONS"],
             allow_headers=["*"],
+            allow_credentials=False,
         )
     ],
     exception_handlers={
