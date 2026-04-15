@@ -6,7 +6,7 @@
 // PRODUCTION: set your Railway URL once via:
 //   chrome.storage.local.set({ backendUrl: 'https://YOUR-APP.up.railway.app' })
 // Or update PRODUCTION_URL below after deploying to Railway:
-const PRODUCTION_URL = '';  // e.g. 'https://dsa-engine.up.railway.app' — fill after deploy
+const PRODUCTION_URL = 'https://dsabittle-production.up.railway.app';
 const LOCAL_URL      = 'http://localhost:8000';
 const BACKEND_URL    = PRODUCTION_URL || LOCAL_URL;
 
