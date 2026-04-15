@@ -1,0 +1,86 @@
+# .gitignore — DSA Dopamine Engine
+# ──────────────────────────────────────────────────
+# IMPORTANT: Never commit API keys, secrets, or credentials
+# ──────────────────────────────────────────────────
+
+# ── Secrets & Environment — NEVER COMMIT ──
+.env
+.env.*
+backend/.env
+backend/.env.*
+!backend/.env.example
+!.env.example
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+*.spec
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+coverage.xml
+.coverage
+htmlcov/
+
+# ── Virtual environments ──
+venv/
+env/
+.venv/
+Env/
+ENV/
+
+# ── Node / npm (if frontend ever added) ──
+node_modules/
+.next/
+out/
+.cache/
+*.tgz
+
+# ── Temporary / scratch files ──
+fix_html.py
+
+# ── OS artifacts ──
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ── IDE ──
+.vscode/settings.json
+.vscode/*.code-workspace
+.idea/
+*.swp
+*.swo
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# ── Logs ──
+*.log
+logs/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ── Chrome Extension — packed artifacts ──
+extension/*.zip
+extension/*.crx
+extension/*.pem
+
+# ── Kiro IDE internal ──
+.kiro/
+
+# ── Railway / deployment artifacts ──
+.railway/

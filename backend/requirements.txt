@@ -1,0 +1,6 @@
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+openai==1.57.0
+python-dotenv==1.0.1
+# pydantic v1 — pure Python, works on Python 3.14 without Rust
+pydantic==1.10.21

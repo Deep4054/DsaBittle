@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DSA Dopamine Engine — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #050711;
+      --glass:       rgba(12, 16, 36, 0.6);
+      --glass2:      rgba(255,255,255,0.03);
+      --border:      rgba(255, 255, 255, 0.07);
+      --border-hi:   rgba(108, 99, 255, 0.28);
+      --text:        #f1f5f9;
+      --text-2:      #94a3b8;
+      --text-3:      #475569;
+      --accent:      #6c63ff;
+      --purple:      #a78bfa;
+      --blue:        #60a5fa;
+      --green:       #22c55e;
+      --yellow:      #f59e0b;
+      --red:         #ef4444;
+      --orange:      #f97316;
+      --blur:        blur(24px);
+      --font:        'Inter', system-ui, sans-serif;
+      --r:           14px;
+      --r-sm:        8px;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Ambient background orbs ── */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      filter: blur(80px);
+      z-index: 0;
+    }
+    .orb-1 {
+      top: -120px; left: -120px;
+      width: 520px; height: 520px;
+      background: radial-gradient(circle, rgba(108,99,255,0.2) 0%, transparent 70%);
+    }
+    .orb-2 {
+      bottom: -150px; right: -150px;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(59,130,246,0.14) 0%, transparent 70%);
+    }
+    .orb-3 {
+      top: 40%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(34,197,94,0.06) 0%, transparent 70%);
+    }
+
+    /* ── Layout ── */
+    .app { max-width: 1120px; margin: 0 auto; padding: 0 28px 80px; position: relative; z-index: 1; }
+
+    /* ── Top nav ── */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 22px 0 28px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 36px;
+    }
+    .brand { display: flex; align-items: center; gap: 13px; }
+    .brand-icon {
+      width: 42px; height: 42px;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 24px rgba(108,99,255,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+    }
+    .brand-icon svg { width: 20px; height: 20px; color: white; }
+    .brand-name {
+      font-size: 22px; font-weight: 800;
+      background: linear-gradient(135deg, #a78bfa, #60a5fa);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .brand-sub { font-size: 12px; color: var(--text-3); margin-top: 1px; }
+
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .level-pill {
+      font-size: 11px; font-weight: 700;
+      padding: 6px 14px; border-radius: 20px;
+      background: rgba(108,99,255,0.12);
+      border: 1px solid rgba(108,99,255,0.28);
+      color: var(--purple);
+      text-transform: uppercase; letter-spacing: 0.6px;
+    }
+    .btn-primary {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 20px; font-size: 13px; font-weight: 700;
+      font-family: var(--font);
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: white; border: none; border-radius: 11px;
+      cursor: pointer; transition: all 0.22s;
+      box-shadow: 0 4px 18px rgba(108,99,255,0.35), inset 0 1px 0 rgba(255,255,255,0.12);
+    }
+    .btn-primary svg { width: 14px; height: 14px; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(108,99,255,0.5); }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+    /* ── Glass card base ── */
+    .glass-card {
+      background: var(--glass);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
+      position: relative; overflow: hidden;
+    }
+    .glass-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%);
+    }
+
+    .card-header {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 18px;
+    }
+    .card-icon {
+      width: 32px; height: 32px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .card-icon svg { width: 15px; height: 15px; }
+    .card-title {
+      font-size: 12px; font-weight: 700;
+      color: var(--text-3); text-transform: uppercase; letter-spacing: 0.8px;
+    }
+
+    /* ── Hero Stats ── */
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(4,1fr);
+      gap: 16px; margin-bottom: 20px;
+    }
+    .stat-hero {
+      padding: 22px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .stat-hero:hover { transform: translateY(-3px); box-shadow: 0 12px 36px rgba(0,0,0,0.4), var(--hero-glow, none), inset 0 1px 0 rgba(255,255,255,0.08); }
+
+    .stat-hero-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 14px;
+      background: var(--hero-bg);
+      box-shadow: 0 0 16px var(--hero-glow-color, transparent);
+    }
+    .stat-hero-icon svg { width: 17px; height: 17px; color: var(--hero-color); }
+    .stat-hero-label { font-size: 10px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 6px; }
+    .stat-hero-value { font-size: 40px; font-weight: 800; color: var(--hero-color); line-height: 1; margin-bottom: 3px; }
+    .stat-hero-sub { font-size: 11px; color: var(--text-3); }
+
+    .s-solved { --hero-color:#22c55e; --hero-bg:rgba(34,197,94,0.1); --hero-glow:0 0 20px rgba(34,197,94,0.1); --hero-glow-color:rgba(34,197,94,0.3); }
+    .s-streak { --hero-color:#f97316; --hero-bg:rgba(249,115,22,0.1); --hero-glow:0 0 20px rgba(249,115,22,0.1); --hero-glow-color:rgba(249,115,22,0.3); }
+    .s-xp     { --hero-color:#a78bfa; --hero-bg:rgba(167,139,250,0.1); --hero-glow:0 0 20px rgba(167,139,250,0.1); --hero-glow-color:rgba(167,139,250,0.3); }
+    .s-today  { --hero-color:#60a5fa; --hero-bg:rgba(96,165,250,0.1); --hero-glow:0 0 20px rgba(96,165,250,0.1); --hero-glow-color:rgba(96,165,250,0.3); }
+
+    /* ── XP Bar ── */
+    .xp-section { padding: 20px 24px; margin-bottom: 20px; }
+    .xp-top { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .xp-level { font-size: 14px; font-weight: 700; color: var(--text); }
+    .xp-info  { font-size: 12px; color: var(--text-3); }
+    .xp-track { height: 7px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; }
+    .xp-fill {
+      height: 100%; border-radius: 4px;
+      background: linear-gradient(90deg, #4f46e5, #a78bfa, #60a5fa);
+      transition: width 0.8s cubic-bezier(0.16,1,0.3,1);
+      box-shadow: 0 0 10px rgba(108,99,255,0.5);
+    }
+
+    /* ── Heatmap ── */
+    .heatmap-section { padding: 22px 24px; margin-bottom: 20px; }
+    .heatmap-grid { display: flex; gap: 3px; overflow-x: auto; padding-bottom: 6px; }
+    .heatmap-week { display: flex; flex-direction: column; gap: 3px; }
+    .heatmap-cell {
+      width: 11px; height: 11px; border-radius: 2px;
+      flex-shrink: 0; cursor: pointer; transition: transform 0.1s;
+    }
+    .heatmap-cell:hover { transform: scale(1.5); }
+    .heatmap-cell[data-v="0"] { background: rgba(255,255,255,0.04); }
+    .heatmap-cell[data-v="1"] { background: rgba(108,99,255,0.25); }
+    .heatmap-cell[data-v="2"] { background: rgba(108,99,255,0.5); }
+    .heatmap-cell[data-v="3"] { background: rgba(108,99,255,0.75); box-shadow: 0 0 4px rgba(108,99,255,0.5); }
+    .heatmap-cell[data-v="4"] { background: #a78bfa; box-shadow: 0 0 6px rgba(167,139,250,0.6); }
+    .heatmap-months { display: flex; gap: 3px; font-size: 10px; color: var(--text-3); margin-bottom: 6px; overflow: hidden; }
+    .heatmap-months span { min-width: 30px; }
+
+    /* ── Two / Three col ── */
+    .two-col   { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+
+    /* ── Difficulty ── */
+    .diff-section { padding: 22px 24px; }
+    .diff-row  { display: flex; align-items: center; gap: 12px; margin-bottom: 13px; }
+    .diff-row:last-child { margin-bottom: 0; }
+    .diff-lbl  { width: 56px; font-size: 12px; font-weight: 700; }
+    .diff-lbl.easy   { color: var(--green); }
+    .diff-lbl.medium { color: var(--yellow); }
+    .diff-lbl.hard   { color: var(--red); }
+    .diff-bg   { flex: 1; height: 7px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; }
+    .diff-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+    .diff-fill.easy   { background: var(--green); box-shadow: 0 0 8px rgba(34,197,94,0.4); }
+    .diff-fill.medium { background: var(--yellow); box-shadow: 0 0 8px rgba(245,158,11,0.4); }
+    .diff-fill.hard   { background: var(--red);    box-shadow: 0 0 8px rgba(239,68,68,0.4); }
+    .diff-cnt  { width: 28px; text-align: right; font-size: 14px; font-weight: 800; color: var(--text); }
+
+    /* ── Streak card ── */
+    .streak-section { padding: 22px 24px; text-align: center; }
+    .streak-ring {
+      width: 90px; height: 90px; border-radius: 50%; margin: 0 auto 14px;
+      background: conic-gradient(from 0deg, rgba(249,115,22,0.8) var(--pct, 0%), rgba(255,255,255,0.05) var(--pct, 0%));
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 24px rgba(249,115,22,0.2);
+      position: relative;
+    }
+    .streak-ring::before {
+      content: ''; position: absolute; inset: 6px;
+      border-radius: 50%; background: var(--glass);
+      backdrop-filter: var(--blur);
+    }
+    .streak-inner { position: relative; z-index: 1; text-align: center; }
+    .streak-num  { font-size: 30px; font-weight: 800; color: var(--orange); line-height: 1; }
+    .streak-day  { font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; }
+    .streak-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 12px; font-weight: 600; color: var(--text-2);
+      background: rgba(249,115,22,0.08);
+      border: 1px solid rgba(249,115,22,0.2);
+      padding: 5px 12px; border-radius: 20px;
+    }
+    .streak-badge svg { width: 12px; height: 12px; color: var(--orange); }
+
+    /* ── Tag bars ── */
+    .tag-section { padding: 22px 24px; }
+    .tag-item { display: flex; align-items: center; gap: 10px; margin-bottom: 11px; }
+    .tag-item:last-child { margin-bottom: 0; }
+    .tag-name { width: 120px; font-size: 12px; font-weight: 500; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tag-bg { flex: 1; height: 5px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; }
+    .tag-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #4f46e5, #a78bfa); transition: width 0.5s ease; }
+    .tag-fill.slow { background: linear-gradient(90deg, #ef4444, #f97316); }
+    .tag-val { width: 30px; text-align: right; font-size: 12px; font-weight: 700; color: var(--text-3); }
+
+    /* ── History ── */
+    .history-section { padding: 22px 24px; margin-bottom: 20px; }
+    .history-row {
+      display: flex; align-items: center; gap: 13px;
+      padding: 10px 12px; border-radius: 9px;
+      cursor: pointer; transition: background 0.15s; text-decoration: none; color: inherit;
+    }
+    .history-row:hover { background: rgba(255,255,255,0.04); }
+    .diff-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .diff-dot.easy   { background: var(--green); box-shadow: 0 0 5px var(--green); }
+    .diff-dot.medium { background: var(--yellow); box-shadow: 0 0 5px var(--yellow); }
+    .diff-dot.hard   { background: var(--red);   box-shadow: 0 0 5px var(--red); }
+    .h-title { flex: 1; font-size: 13px; font-weight: 500; }
+    .h-meta  { display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--text-3); }
+    .tag-pill {
+      font-size: 10px; font-weight: 600; padding: 2px 7px;
+      border-radius: 10px; background: rgba(108,99,255,0.1);
+      color: var(--purple); border: 1px solid rgba(108,99,255,0.18);
+    }
+
+    /* ── Empty State ── */
+    .empty-wrap { padding: 80px 20px; text-align: center; }
+    .empty-icon-wrap {
+      width: 72px; height: 72px; margin: 0 auto 20px;
+      border-radius: 20px;
+      background: rgba(108,99,255,0.1);
+      border: 1px solid rgba(108,99,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .empty-icon-wrap svg { width: 34px; height: 34px; color: var(--purple); }
+    .empty-h { font-size: 22px; font-weight: 800; margin-bottom: 10px; }
+    .empty-p { font-size: 14px; color: var(--text-2); line-height: 1.6; margin-bottom: 28px; }
+    .steps-card { max-width: 440px; margin: 0 auto; padding: 24px; text-align: left; }
+    .step-item { display: flex; gap: 13px; margin-bottom: 16px; }
+    .step-num {
+      width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+      background: rgba(108,99,255,0.15); border: 1px solid rgba(108,99,255,0.3);
+      color: var(--purple); font-size: 11px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .step-text { font-size: 13px; line-height: 1.6; color: var(--text-2); }
+    code { background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 12px; color: #7dd3fc; }
+
+    /* ── AI Coaching Modal ── */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(3, 5, 14, 0.8);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      z-index: 9999; display: none; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .overlay.open { display: flex; }
+    .modal {
+      width: 100%; max-width: 580px; max-height: 88vh; overflow-y: auto;
+      border-radius: 18px;
+      animation: modalIn 0.3s cubic-bezier(0.16,1,0.3,1);
+    }
+    @keyframes modalIn { from { opacity:0; transform: scale(0.93) translateY(12px); } to { opacity:1; transform: none; } }
+    .modal-head {
+      padding: 22px 26px; border-radius: 18px 18px 0 0;
+      background: linear-gradient(135deg, rgba(79,70,229,0.2), rgba(12,16,36,0.8));
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .modal-title {
+      font-size: 15px; font-weight: 800;
+      background: linear-gradient(135deg, #a78bfa, #60a5fa);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .modal-close-btn {
+      width: 30px; height: 30px;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text-3); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .modal-close-btn:hover { background: rgba(239,68,68,0.12); color: var(--red); border-color: rgba(239,68,68,0.25); }
+    .modal-close-btn svg { width: 14px; height: 14px; }
+    .modal-body { padding: 26px; display: flex; flex-direction: column; gap: 20px; }
+    .m-section-lbl { font-size: 10px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+    .m-text { font-size: 13px; line-height: 1.7; color: var(--text-2); }
+    .m-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .m-box { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+    .chip { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; margin: 3px 3px 0 0; }
+    .chip-g { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+    .chip-r { background: rgba(239,68,68,0.1);  color: var(--red);   border: 1px solid rgba(239,68,68,0.2); }
+    .insight-panel {
+      background: linear-gradient(135deg, rgba(108,99,255,0.07), rgba(59,130,246,0.05));
+      border: 1px solid rgba(108,99,255,0.18);
+      border-radius: 10px; padding: 16px;
+    }
+    .motivation-panel {
+      background: linear-gradient(135deg, rgba(79,70,229,0.12), rgba(37,38,87,0.12));
+      border-radius: 10px; padding: 16px; text-align: center;
+      border: 1px solid rgba(108,99,255,0.1);
+    }
+    .motivation-text { font-size: 14px; font-style: italic; color: var(--purple); line-height: 1.65; }
+    .predicted-pill {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 12px; font-weight: 700;
+      padding: 6px 16px; border-radius: 20px;
+      background: rgba(108,99,255,0.12); border: 1px solid rgba(108,99,255,0.28);
+      color: var(--purple);
+    }
+    .predicted-pill svg { width: 13px; height: 13px; }
+    .spin { width: 36px; height: 36px; border: 2px solid rgba(108,99,255,0.15); border-top-color: var(--accent); border-radius: 50%; animation: sp 0.7s linear infinite; margin: 44px auto; }
+    @keyframes sp { to { transform: rotate(360deg); } }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 3px; }
+
+    @media (max-width: 860px) {
+      .stats-grid { grid-template-columns: repeat(2,1fr); }
+      .two-col, .three-col { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Ambient orbs -->
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="app">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
+          <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
+          <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">DSA Dopamine Engine</div>
+        <div class="brand-sub">Personal Analytics Dashboard</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span class="level-pill" id="level-label">Beginner</span>
+      <button class="btn-primary" id="btn-report">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        AI Coaching Report
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN (data loaded) -->
+  <div id="main" style="display:none">
+
+    <!-- Hero Stats -->
+    <div class="stats-grid">
+      <div class="glass-card stat-hero s-solved" style="padding:22px">
+        <div class="stat-hero-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="stat-hero-label">Total Solved</div>
+        <div class="stat-hero-value" id="s-total">0</div>
+        <div class="stat-hero-sub">problems completed</div>
+      </div>
+      <div class="glass-card stat-hero s-streak" style="padding:22px">
+        <div class="stat-hero-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>
+        </div>
+        <div class="stat-hero-label">Current Streak</div>
+        <div class="stat-hero-value" id="s-streak">0</div>
+        <div class="stat-hero-sub">consecutive days</div>
+      </div>
+      <div class="glass-card stat-hero s-xp" style="padding:22px">
+        <div class="stat-hero-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <div class="stat-hero-label">Total XP</div>
+        <div class="stat-hero-value" id="s-xp">0</div>
+        <div class="stat-hero-sub">experience earned</div>
+      </div>
+      <div class="glass-card stat-hero s-today" style="padding:22px">
+        <div class="stat-hero-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div class="stat-hero-label">Today</div>
+        <div class="stat-hero-value" id="s-today">0</div>
+        <div class="stat-hero-sub">solved today</div>
+      </div>
+    </div>
+
+    <!-- XP Bar -->
+    <div class="glass-card xp-section" style="margin-bottom:20px">
+      <div class="xp-top">
+        <span class="xp-level" id="xp-cur">Beginner</span>
+        <span class="xp-info"  id="xp-nxt">100 XP to next level</span>
+      </div>
+      <div class="xp-track"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
+    </div>
+
+    <!-- Heatmap -->
+    <div class="glass-card heatmap-section" style="margin-bottom:20px">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(108,99,255,0.1)">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <span class="card-title">Activity Heatmap — Last 6 Months</span>
+      </div>
+      <div class="heatmap-months" id="hm-months"></div>
+      <div class="heatmap-grid" id="hm-grid"></div>
+    </div>
+
+    <!-- Difficulty + Streak -->
+    <div class="two-col">
+      <div class="glass-card diff-section">
+        <div class="card-header">
+          <div class="card-icon" style="background:rgba(34,197,94,0.1)">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </div>
+          <span class="card-title">Difficulty Distribution</span>
+        </div>
+        <div class="diff-row">
+          <span class="diff-lbl easy">Easy</span>
+          <div class="diff-bg"><div class="diff-fill easy" id="d-easy" style="width:0%"></div></div>
+          <span class="diff-cnt" id="c-easy">0</span>
+        </div>
+        <div class="diff-row">
+          <span class="diff-lbl medium">Medium</span>
+          <div class="diff-bg"><div class="diff-fill medium" id="d-med" style="width:0%"></div></div>
+          <span class="diff-cnt" id="c-med">0</span>
+        </div>
+        <div class="diff-row">
+          <span class="diff-lbl hard">Hard</span>
+          <div class="diff-bg"><div class="diff-fill hard" id="d-hard" style="width:0%"></div></div>
+          <span class="diff-cnt" id="c-hard">0</span>
+        </div>
+      </div>
+
+      <div class="glass-card streak-section">
+        <div class="card-header">
+          <div class="card-icon" style="background:rgba(249,115,22,0.1)">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>
+          </div>
+          <span class="card-title">Streak</span>
+        </div>
+        <div class="streak-ring" id="streak-ring">
+          <div class="streak-inner">
+            <div class="streak-num" id="streak-num">0</div>
+            <div class="streak-day">days</div>
+          </div>
+        </div>
+        <div style="text-align:center">
+          <div class="streak-badge" id="streak-msg">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>
+            Start your streak today
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tag Analysis -->
+    <div class="two-col">
+      <div class="glass-card tag-section">
+        <div class="card-header">
+          <div class="card-icon" style="background:rgba(167,139,250,0.1)">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <span class="card-title">Most Practiced Topics</span>
+        </div>
+        <div id="top-tags"><span style="font-size:12px;color:var(--text-3)">Solve more problems to see data</span></div>
+      </div>
+      <div class="glass-card tag-section">
+        <div class="card-header">
+          <div class="card-icon" style="background:rgba(239,68,68,0.1)">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <span class="card-title">Slowest Topics (Avg Time)</span>
+        </div>
+        <div id="slow-tags"><span style="font-size:12px;color:var(--text-3)">Need 2+ solves per topic</span></div>
+      </div>
+    </div>
+
+    <!-- Recent History -->
+    <div class="glass-card history-section">
+      <div class="card-header">
+        <div class="card-icon" style="background:rgba(96,165,250,0.1)">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <span class="card-title">Recent Problems</span>
+      </div>
+      <div id="history-list"></div>
+    </div>
+
+  </div><!-- /main -->
+
+  <!-- EMPTY STATE -->
+  <div id="empty" style="display:none">
+    <div class="empty-wrap">
+      <div class="empty-icon-wrap">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
+      </div>
+      <div class="empty-h">No data yet — let's get started</div>
+      <div class="empty-p">Solve problems on LeetCode with the extension active, then your stats appear here automatically.</div>
+      <div class="glass-card steps-card">
+        <div class="step-item"><div class="step-num">1</div><div class="step-text">Run the backend: <code>uvicorn main:app --port 8000</code></div></div>
+        <div class="step-item"><div class="step-num">2</div><div class="step-text">Go to <strong>chrome://extensions</strong> and reload the DSA Engine extension</div></div>
+        <div class="step-item"><div class="step-num">3</div><div class="step-text">Open a LeetCode problem — wait for the glass panel to appear on the right</div></div>
+        <div class="step-item" style="margin-bottom:0"><div class="step-num">4</div><div class="step-text">Click <strong>Mark as Solved</strong> in the panel — your data appears here instantly</div></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- AI Report Modal -->
+<div class="overlay" id="overlay">
+  <div class="glass-card modal" style="backdrop-filter:blur(32px)">
+    <div class="modal-head">
+      <span class="modal-title">AI Coaching Report — Powered by NVIDIA NIM</span>
+      <button class="modal-close-btn" id="modal-close">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="modal-body">
+      <div class="spin"></div>
+    </div>
+  </div>
+</div>
+
+<script src="dashboard.js"></script>
+</body>
+</html>
