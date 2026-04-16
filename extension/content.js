@@ -375,6 +375,11 @@
       body.appendChild(deeperDiv);
     }
 
+    if (!chrome.runtime?.id) {
+      const deeperEl = document.getElementById('ddp-deeper');
+      if (deeperEl) deeperEl.innerHTML = `<div class="ddp-error-box"><p>Extension reloaded — refresh page to retry.</p></div>`;
+      return;
+    }
     chrome.runtime.sendMessage(
       { type: 'DEEPER_EXPLANATION', payload: { title: data.title, pattern } },
       (response) => {

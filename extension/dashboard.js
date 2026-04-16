@@ -262,8 +262,11 @@ document.getElementById('btn-report').addEventListener('click', async () => {
       <div style="font-size:32px;margin-bottom:12px">⚠️</div>
       <p style="font-size:15px;font-weight:700;color:#f1f5f9;margin-bottom:8px">AI Report Unavailable</p>
       <p style="font-size:13px;color:#64748b;line-height:1.6">The AI backend is cold-starting on Railway.<br>Wait 10 seconds and try again.</p>
-      <button onclick="document.getElementById('overlay').classList.remove('open')" style="margin-top:20px;padding:10px 24px;background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);color:#a78bfa;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;">Close</button>
+      <button id="error-close-btn" style="margin-top:20px;padding:10px 24px;background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);color:#a78bfa;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;">Close</button>
     </div>`;
+    document.getElementById('error-close-btn')?.addEventListener('click', () => {
+      document.getElementById('overlay').classList.remove('open');
+    });
   }
 
   btn.disabled = false;
