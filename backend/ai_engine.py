@@ -31,25 +31,27 @@ POWER_MODEL = "meta/llama-3.3-70b-instruct"
 # MAIN PROMPT — ChatGPT casual, honest, no template
 # ─────────────────────────────────────────────
 
-ANALYZE_PROMPT = """You're a real engineer explaining things simply to a friend who is coding.
+ANALYZE_PROMPT = """You're a friendly engineer explaining things to a developer friend.
 
 Problem: "{title}"
 Tags: {tags}
 Description: {description}
 
+Be conversational and helpful. Give enough detail to be useful, but stay grounded.
+
 RULES:
-- If simple problem (renaming, mapping, basic utility) → keep it simple, 1-2 lines max per field
-- No generic lines like "used in many systems" or "general computation"
-- No fake scale talk (1M users, SLA, latency) unless truly relevant
-- Talk like a dev: "This is just...", "You'll hit this when...", "If you mess this up..."
-- If there's no strong real-world angle, be honest and keep it short
+- If simple problem → keep it practical, 3-4 lines per field
+- No generic filler like "used in many systems" or "general computation"
+- No fake scale drama (1M users, SLA) unless truly relevant
+- Be specific to THIS problem
+- Friendly tone: "You're basically...", "This shows up when...", "If you get this wrong..."
 
 Return ONLY valid JSON (no markdown, no backticks):
 {{
-  "whatIsThis": "1-2 lines. What this actually is in plain terms.",
-  "realUse": "2-3 lines. Where this shows up in real work. Be specific to this problem.",
-  "whatBreaks": "1-2 lines. What goes wrong if done wrong.",
-  "pattern": "Short name — e.g. Column Renaming, Hash Lookup, BFS",
+  "whatIsThis": "3-4 friendly lines. Explain what this problem is actually about in plain terms.",
+  "realUse": "3-5 lines. Where does this show up in real development work? Be specific and conversational.",
+  "whatBreaks": "2-3 lines. What actually goes wrong if you mess this up? Be honest and specific.",
+  "pattern": "Short name — e.g. Column Renaming, Hash Lookup, Binary Search",
   "difficulty": "{difficulty}"
 }}"""
 
