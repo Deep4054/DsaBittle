@@ -1,14 +1,15 @@
 /* ================================================================
    DSA Engine — Content Script UI
-   Plus Jakarta Sans · Bold cards · Dark/Light · Toggleable sections
+   Bold cards · Dark/Light · Toggleable sections
    ================================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+/* NOTE: No @import here — blocked by extension CSP in content scripts.
+   Using system font stack that looks great on all platforms. */
 
 #dsa-dopamine-panel,
 #ddp-toggle-btn,
 .ddp-toast {
-  --font-sans: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Plus Jakarta Sans', sans-serif;
   --font-mono: 'Courier New', monospace;
 
   /* Light mode */

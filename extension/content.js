@@ -114,8 +114,8 @@
   function buildCard({ icon, iconClass, label, preview, content, open = false }) {
     const id = 'ddpc-' + Math.random().toString(36).slice(2, 8);
     return `
-      <div class="ddp-card${open ? ' open' : ''}" id="${id}">
-        <div class="ddp-card-header" onclick="(function(el){el.classList.toggle('open')})(document.getElementById('${id}'))">
+      <div class="ddp-card${open ? ' open' : ''}" id="${id}" data-card>
+        <div class="ddp-card-header" data-card-toggle="${id}">
           <div class="ddp-card-header-left">
             <div class="ddp-card-icon ${iconClass}">${icon}</div>
             <span class="ddp-card-label">${label}</span>
@@ -125,6 +125,17 @@
         ${preview ? `<div class="ddp-card-preview">${preview}</div>` : ''}
         <div class="ddp-card-body">${content}</div>
       </div>`;
+  }
+
+  // Wire card toggles after innerHTML is set (no inline onclick — CSP safe)
+  function wireCardToggles(container) {
+    container.querySelectorAll('[data-card-toggle]').forEach(header => {
+      header.addEventListener('click', () => {
+        const id = header.getAttribute('data-card-toggle');
+        const card = document.getElementById(id);
+        if (card) card.classList.toggle('open');
+      });
+    });
   }
 
   // ── STEP 2: Create the floating side panel ──
@@ -354,6 +365,7 @@
     if (prodReality||analogy) html += buildCard({ icon: SVG.screen, iconClass: 'ddp-icon-purple', label: prodReality ? 'Production Reality' : 'Analogy', preview: (prodReality||analogy).slice(0,58)+'...', content: '<div class="ddp-quote-box"><p>'+(prodReality||analogy)+'</p></div>' });
 
     body.innerHTML = html;
+    wireCardToggles(body);
     if (footer) footer.style.display = 'flex';
     document.getElementById('ddp-explain-more')?.addEventListener('click', () => {
       requestDeeperExplanation(data, insights.pattern);
