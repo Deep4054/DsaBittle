@@ -307,36 +307,38 @@
 
     const clean = (f) => dedup(cleanText(f || ''));
 
-    // ── Extract fields ──
-    const realWorld  = clean(insights.realWorldConnection || insights.problemSolves || '');
-    const whySolve   = clean(insights.whySolveThis || insights.whyMatters || '');
-    const casual     = (insights.casualUseCases || []).map(c => cleanText(c)).filter(Boolean);
-    const prodReal   = clean(insights.productionReality || '');
-    const whyAsk     = clean(insights.whyCompaniesAsk || '');
-    const costWrong  = clean(insights.costOfGettingWrong || '');
-    const skillGain  = clean(insights.skillYouGain || '');
+    // ── Extract fields — new schema first, old names as fallback ──
+    const realWorld  = clean(insights.realWorldStory || insights.realWorldConnection || insights.problemSolves || '');
+    const whyHurts   = clean(insights.whyItHurts || '');
+    const whySolve   = clean(insights.whySolveIt || insights.whySolveThis || insights.whyMatters || '');
+
+    // casualUseCase is now a string; casualUseCases (old) was an array
+    const casualRaw  = insights.casualUseCase || '';
+    const casualArr  = insights.casualUseCases || [];
+    const casualText = clean(casualRaw) || casualArr.map(c => cleanText(c)).filter(Boolean).join(' ') || '';
+
+    const companiesCtx = clean(insights.companiesContext || insights.productionReality || insights.whyCompaniesAsk || '');
+    const costWrong    = clean(insights.costOfGettingWrong || '');
+    const skillGain    = clean(insights.skillYouGain || '');
 
     // Normalize companies (string or array)
     const rawCo = insights.companies;
     const companies = Array.isArray(rawCo)
-      ? rawCo.map(c => cleanText(c)).filter(Boolean)
+      ? rawCo.map(c => cleanText(c)).filter(c => c.length > 1 && c.length < 35)
       : typeof rawCo === 'string'
         ? rawCo.split(/[:,;]/).map(c => c.replace(/any company[^,]*/i,'').trim()).filter(c => c.length > 1 && c.length < 35)
         : [];
 
-    // ── Section 1 (amber): Real-life use case ──
-    const sec1Text = realWorld || whySolve || '';
+    // ── Section 1 (amber): Real-world story ──
+    const sec1Text = realWorld;
     const sec1Head = sec1Text.split(/\.\s+/)[0].replace(/\.$/,'').trim();
 
-    // ── Section 2 (sage): Why you need this ──
-    // Pick the best plain-language explanation
-    const sec2Parts = [];
-    if (casual.length) sec2Parts.push(casual.join(' '));
-    else if (whySolve && whySolve !== sec1Text) sec2Parts.push(whySolve);
-    const sec2Text = sec2Parts.join(' ').trim();
+    // ── Section 2 (sage): Why it hurts + casual + why solve ──
+    const sec2Parts = [whyHurts, casualText, whySolve].filter(Boolean);
+    const sec2Text  = sec2Parts.join(' ').trim();
 
-    // ── Section 3 (lavender): Companies & prod usage ──
-    const sec3Extra = prodReal || whyAsk || '';
+    // ── Section 3 (lavender): Companies context + chips ──
+    const sec3Extra = companiesCtx;
 
     let html = '';
 

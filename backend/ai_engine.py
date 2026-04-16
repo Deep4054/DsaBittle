@@ -32,83 +32,63 @@ POWER_MODEL = "meta/llama-3.3-70b-instruct"
 # PROMPTS — PRODUCTION-FOCUSED, PROBLEM-SPECIFIC
 # ─────────────────────────────────────────────
 
-ANALYZE_PROMPT = """You are a production engineer (not a DSA tutor) explaining why solving THIS exact problem matters in real systems.
+ANALYZE_PROMPT = """
+You are a senior engineer who has worked at Google, Uber, Stripe, and startups.
+You explain DSA problems to a smart friend who needs to understand WHY — not just WHAT.
+Your vibe: senior dev over coffee, not a textbook. Direct. Real.
+You use actual app names, actual features, actual failure modes.
+You do NOT use bullet points, key-value labels, or formal headers. You write flowing casual paragraphs like a human talking.
 
 Problem: "{title}"
 Difficulty: {difficulty}
 Tags: {tags}
 Description: {description}
 
-YOUR TASK: Find the actual, non-obvious reason a company NEEDS this computation solved.
-- NOT "this is used in sorting" or "this is a fundamental algorithm"
-- YES "when this system fails or is slow, it costs the company $X per minute" or "this constraint exists because of a real product requirement"
-- YES "I can point to the exact line of code or system decision that requires solving this"
-
-Think like a tech lead who got paged at 3am because THIS problem wasn't solved efficiently.
-
-Return ONLY valid JSON (no markdown):
-{{
-  "pattern": "The core computational pattern '{title}' reduces to",
-  "problemSolves": "What actual business problem, system constraint, or user-facing issue does '{title}' solve? (Not 'it teaches you about trees')",
-  "productsNeedThis": [
-    {{
-      "product": "Actual product/company/service",
-      "whyTheNeed": "Concrete scenario: what constraint forces them to solve this, when does it run, what breaks if slow/wrong"
-    }},
-    {{
-      "product": "Another non-obvious real scenario",
-      "whyTheNeed": "Why does THEIR ACTUAL SYSTEM need this exact solution (not just 'they use algorithms')"
-    }},
-    {{
-      "product": "Third example (pick something common users interact with)",
-      "whyTheNeed": "Specific trigger: what user action causes this computation, why can't they avoid it"
-    }}
-  ],
-  "costOfGettingWrong": "Real consequences if this is solved inefficiently or incorrectly: latency impact, money lost, user experience breaking, scale limit hit",
-  "whyThisProblemMatters": "2-3 sentences: why solving THIS teaches you something about building REAL systems under constraint, not just DSA theory",
-  "productionReality": "The unsexy production truth: what engineer frustration, business pressure, or scale reality does THIS problem represent?",
-  "skillYouGain": "Specific technical skill or debugging mindset: what can you NOW build or debug that you couldn't before solving this?",
-  "whenYourSeeThis": "Signal in real code: what pattern in a codebase or system design tells you THIS exact problem is being solved",
-  "companies": ["Real companies known to hire specifically for this exact problem"],
-  "analogy": "One analogy from ACTUAL WORK (not nature/animals): how does '{title}' map to something a junior engineer encounters on day 1",
-  "difficulty": "{difficulty}"
-}}
-
 RULES:
-- productsNeedThis must list ACTUAL products with specific, user-facing scenarios (not generic 'tech companies use algorithms')
-- costOfGettingWrong must describe REAL consequences (latency SLA miss = money, scale limit = business decision delayed, user experience = churn)
-- productionReality must feel like overhearing engineers in Slack or Zoom, not Wikipedia
-- skillYouGain must be actionable: 'identify memory bottlenecks in X' not 'learn about optimization'
-- whenYouSeeThis must be about pattern recognition in real codebases
-- Return ONLY valid JSON"""
+1. NEVER write like an email template. No 'Real-World Application:', no labels. Just talk.
+2. Answer 'bro why should I actually care about this' — directly, specifically, with urgency.
+3. Be specific. Don't say 'used in many applications.' Say WHICH app, WHICH feature, WHICH moment.
+4. Make the pain of NOT knowing this feel real. Production bugs, latency spikes. Not dramatic — accurate.
+5. Short, dense. Every sentence earns its place. No filler.
+6. Use casual register: 'you', 'your', 'basically', 'look', 'here's the thing', 'honestly'.
+7. If a field has nothing useful to say, return an empty string. Do not pad with generic filler.
+
+Return ONLY valid JSON (no markdown, no backticks, no preamble):
+{{
+  "pattern": "Two Pointers | Hash Map | BFS | Dynamic Programming | Sliding Window | etc",
+  "difficulty": "{difficulty}",
+  "realWorldStory": "2-4 sentences. Start with a real app and where exactly this algo runs inside it. Make it specific and tangible. Example: 'Every time you split a bill on Splitwise, their backend runs something like this. Without an efficient lookup, it scans every transaction for every person. At 10M users that's not slow, it's dead.'",
+  "whyItHurts": "2-3 sentences. What actually breaks in production if you get this wrong — slow queries, memory blowup, SLA miss, 500 errors. Example: 'Brute force works fine on your laptop with 10 items. At 100K transactions it's already lagging. At 1M it's a customer support ticket. At 10M it's an incident report.'",
+  "casualUseCase": "A flowing paragraph (not a list). 2-3 casual real-world scenarios as flowing text. Example: 'Tinder's swipe queue is basically this. Netflix figuring out what to buffer next — same idea. Your IDE autocomplete? Yep, every keystroke.'",
+  "whySolveIt": "1-2 sentences. The honest reason this exists in interviews and codebases. Example: 'Companies ask this because it shows you know when brute force will kill you in prod. That's a 100x salary decision for them.'",
+  "companiesContext": "1-2 sentences about what KIND of teams hit this and why. Don't just list names. Example: 'Any team running a recommendation engine, feed, or search bar has dealt with this. That's basically every company post Series A.'",
+  "companies": ["Real company names only, no descriptions — e.g. Google, Uber, Stripe, Amazon"],
+  "costOfGettingWrong": "One sentence. Specific consequence of naive solution at real scale.",
+  "skillYouGain": "One sentence. What specific thing you can now build or debug that you couldn't before."
+}}"""
 
 
-DEEPER_PROMPT = """You are a senior engineer doing a deep technical review.
+
+DEEPER_PROMPT = """
+Same vibe — senior dev, casual, real. No textbook explanations.
 
 Problem: "{title}"
 Pattern: {pattern}
 
-Your goal: explain NOT just the algorithm, but why THIS constraint matters in production systems.
-
-Return ONLY valid JSON:
+Return ONLY valid JSON (no markdown, no backticks):
 {{
-  "timeComplexity": "Optimal Big-O for '{title}' with one-line justification specific to this problem's constraints",
-  "spaceComplexity": "Big-O with 1-line justification for why space matters here (not generic 'use extra space')",
-  "systemDesignConnection": "Real distributed/high-scale system where '{title}' exact computation is the bottleneck or decision point. Name the actual system, not 'databases in general'",
-  "scalingPoint": "At what scale does the naive solution break? (e.g., '1M queries/sec, connection pooling becomes the constraint')",
+  "timeComplexity": "Just the Big-O with one casual line why. Example: 'O(n) — one pass, that's it.'",
+  "spaceComplexity": "Big-O with one line on why space matters here specifically.",
+  "systemDesignConnection": "2-3 casual sentences. Where exactly does this show up in system design. Specific. Example: 'This is literally how Redis implements its hash table. When you cache a session token, this lookup is happening under the hood.'",
   "edgeCases": [
-    "Edge case SPECIFIC to '{title}' that trips up candidates and shows up in prod bugs",
-    "Non-obvious edge case that reveals whether candidate thinks about constraints",
-    "Constraint-specific case that would break if someone misread the problem"
+    "Write each as a sentence, not a label. Example: 'What if the array is empty — your code needs to not blow up here.'",
+    "Not just 'Single element' — say 'If there's only one element, you return immediately. Make sure you're not comparing an element with itself.'",
+    "A constraint-specific case that would break if someone misread the problem."
   ],
-  "debuggingSignal": "How would you KNOW in production that this exact problem is being solved wrong? (latency dashboard, error pattern, resource spike, etc.)",
-  "followUpProblems": [
-    "Harder LeetCode/real problem that directly extends '{title}' under real constraints",
-    "Variant that shows up when you scale the original to production"
-  ],
-  "mentalModel": "Exact mental model for '{title}': how does a senior engineer think about it the MOMENT they see the constraint? (what's the first instinct, not the algorithm)",
-  "productionTrap": "The most common way engineers get THIS wrong in production systems (not on LeetCode)"
+  "followUpProblems": ["Actual LeetCode problem names that extend this one", "Variant that shows up at prod scale"],
+  "mentalModel": "2-3 sentences. Core intuition like you're drawing on a whiteboard. Casual and visual. Example: 'Think of it like a door with a lock. Every number is a lock. You carry the key for whatever you've seen before. When the right key shows up, door opens — done.'"
 }}"""
+
 
 
 DAILY_REPORT_PROMPT = """You are a production-focused DSA coach analyzing a developer's actual practice data.
@@ -185,17 +165,17 @@ async def analyze_problem(data: ProblemInput) -> dict:
                 {
                     "role": "system",
                     "content": (
-                        "You are a production engineer, NOT a DSA tutor. "
-                        "Always respond with valid JSON only. "
-                        "Every answer must explain the ACTUAL business/system reason this problem matters. "
-                        "Avoid generic 'this is used in tech' responses. "
-                        "Be specific to production constraints, money, scale, user impact."
+                        "You are a senior engineer who has shipped real systems at Google, Uber, Stripe, and startups. "
+                        "You explain DSA problems like a dev talking to another dev — casual, direct, specific. "
+                        "No corporate language, no templates, no 'Key Insight:' headers. "
+                        "Every sentence must be specific to THIS problem — zero generic filler. "
+                        "Respond with valid JSON only. No markdown, no backticks."
                     ),
                 },
                 {"role": "user", "content": prompt},
             ],
-            temperature=0.75,
-            max_tokens=1200,
+            temperature=0.85,
+            max_tokens=1400,
         )
         raw = response.choices[0].message.content.strip()
         return parse_json_response(raw)
@@ -215,15 +195,15 @@ async def get_deeper_explanation(title: str, pattern: str) -> dict:
                 {
                     "role": "system",
                     "content": (
-                        "You are a senior production engineer doing interview prep. "
-                        "Respond with valid JSON only. "
-                        "Focus on why THIS problem matters in real systems under constraint. "
-                        "Be specific about scale, bottlenecks, production failure modes."
+                        "You are a senior engineer explaining to a smart friend — casual, specific, real. "
+                        "No formal structure, no textbook definitions. "
+                        "Respond with valid JSON only. No markdown, no backticks. "
+                        "Every field must be specific to THIS problem, not generic DSA advice."
                     ),
                 },
                 {"role": "user", "content": prompt},
             ],
-            temperature=0.5,
+            temperature=0.7,
             max_tokens=1200,
         )
         raw = response.choices[0].message.content.strip()
@@ -414,30 +394,13 @@ def _fallback_analysis(data: ProblemInput) -> dict:
 
     return {
         "pattern": pattern,
-        "problemSolves": f"'{title}' solves the core constraint: {context['production'].lower()}",
-        "productsNeedThis": [
-            {
-                "product": "High-scale systems (any company with millions of users)",
-                "whyTheNeed": context['signal']
-            },
-            {
-                "product": "Data-heavy services (analytics, search, recommendations)",
-                "whyTheNeed": f"Efficiency in '{title}' directly impacts query latency SLA"
-            },
-            {
-                "product": "Real-time systems (trading, monitoring, streaming)",
-                "whyTheNeed": "Microseconds matter — naive solution = cascading failures"
-            }
-        ],
-        "costOfGettingWrong": f"Inefficient solution hits scaling wall at 1K-10K inputs. On prod: 100ms query → 5sec query → SLA miss → customer churn.",
-        "whyThisProblemMatters": (
-            f"'{title}' isn't about beauty — it's about hitting a hard constraint under real load. "
-            "Solving it teaches you to recognize bottlenecks before they become critical."
-        ),
-        "productionReality": f"Engineers solve this because they hit it. Not theory — necessity.",
-        "skillYouGain": f"Recognize {context['pattern'].lower()} bottlenecks in code. Debug latency dashboards. Know when optimization = business critical.",
-        "whenYourSeeThis": f"When you see {context['signal'].lower()} in monitoring or perf profilers.",
-        "companies": ["Any company operating at scale: Google, Uber, Stripe, DoorDash, Airbnb"],
-        "analogy": f"Like tuning a car engine: you don't study it for art's sake — you study it because the car is slow.",
-        "difficulty": data.difficulty or "Unknown"
+        "difficulty": data.difficulty or "Unknown",
+        "realWorldStory": f"This is the {context['pattern'].lower()} pattern — and it shows up in {context['production'].lower()}. When the naive solution ships, {context['signal'].lower()} and it becomes someone's on-call incident.",
+        "whyItHurts": f"Works fine at 1K inputs. Push it to 100K or 1M and you'll see latency spikes, query timeouts, SLA misses. That's when it goes from a code review comment to a production incident.",
+        "casualUseCase": f"{context['production']}. This pattern is more common than people realize — anytime you're processing data at volume, this is either working for you or against you.",
+        "whySolveIt": "Companies ask this to see if you know when brute force will kill you in prod. That's a real engineering judgment call they're testing for.",
+        "companiesContext": "Any team running at scale has hit this. Fintech, e-commerce, infra — they've all written a version of this in some critical path.",
+        "companies": ["Google", "Uber", "Stripe", "Amazon", "Airbnb"],
+        "costOfGettingWrong": f"Naive solution hits a wall at 10K–100K inputs. In prod: latency SLA miss, customer churn, on-call pages.",
+        "skillYouGain": f"You'll spot {context['pattern'].lower()} bottlenecks before they become incidents.",
     }
