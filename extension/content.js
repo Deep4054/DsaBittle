@@ -220,6 +220,8 @@
     startTime = Date.now();
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => {
+      // Stop timer if extension context is gone
+      if (!chrome.runtime?.id) { clearInterval(timerInterval); timerInterval = null; return; }
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
       const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
       const secs = String(elapsed % 60).padStart(2, '0');
@@ -233,19 +235,27 @@
 
   // ── STEP 4: Request AI Insights ──
   function requestAIInsights(data) {
+    if (!chrome.runtime?.id) { renderError('Extension was reloaded — please refresh the page.'); return; }
     chrome.runtime.sendMessage(
       { type: 'ANALYZE_PROBLEM', payload: data },
       (response) => {
         if (chrome.runtime.lastError) {
-          renderError('Extension error: ' + chrome.runtime.lastError.message);
+          const msg = chrome.runtime.lastError.message || '';
+          if (msg.includes('context invalidated') || msg.includes('receiving end does not exist')) {
+            renderError('Extension was reloaded — please refresh the page.');
+          } else {
+            renderError('Extension error: ' + msg);
+          }
           return;
         }
         if (response?.success) {
           renderInsights(response.data, data);
-          chrome.runtime.sendMessage({
-            type: 'PROBLEM_OPENED',
-            payload: { ...data, timestamp: startTime },
-          });
+          if (chrome.runtime?.id) {
+            chrome.runtime.sendMessage({
+              type: 'PROBLEM_OPENED',
+              payload: { ...data, timestamp: startTime },
+            });
+          }
         } else {
           renderError(response?.error || 'Could not load AI insights.');
         }
@@ -358,6 +368,11 @@
     chrome.runtime.sendMessage(
       { type: 'DEEPER_EXPLANATION', payload: { title: data.title, pattern } },
       (response) => {
+        if (chrome.runtime.lastError) {
+          const deeperEl = document.getElementById('ddp-deeper');
+          if (deeperEl) deeperEl.innerHTML = `<div class="ddp-error-box"><p>Extension reloaded — refresh page to retry.</p></div>`;
+          return;
+        }
         const deeperEl = document.getElementById('ddp-deeper');
         if (!deeperEl) return;
         if (response?.success) {
@@ -421,6 +436,7 @@
   }
 
   function markSolved(data, insights) {
+    if (!chrome.runtime?.id) { showToast('Extension reloaded — refresh the page first.'); return; }
     const timeSpent = Math.floor((Date.now() - startTime) / 1000);
     const btn = document.getElementById('ddp-mark-solved');
     if (btn) {
@@ -439,6 +455,10 @@
         },
       },
       (response) => {
+        if (chrome.runtime.lastError) {
+          showToast('Extension reloaded — refresh the page.');
+          return;
+        }
         if (btn) {
           btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg> Solved!`;
           btn.classList.add('ddp-btn-done');
