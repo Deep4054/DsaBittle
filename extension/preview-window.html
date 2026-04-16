@@ -8,7 +8,7 @@
 <style>
   body {
     margin: 0; padding: 40px;
-    background: #E8E5DF;
+    background: #FDFAF4;
     display: flex; gap: 24px; align-items: flex-start;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     min-height: 100vh;
@@ -24,7 +24,7 @@
   <div class="ddp-header">
     <div class="ddp-header-left">
       <div class="ddp-logo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
       </div>
       <span class="ddp-title">DSA Engine</span>
     </div>
@@ -39,36 +39,36 @@
     </div>
   </div>
 
-  <!-- Body: 3 sections -->
+  <!-- Meta row -->
+  <div class="ddp-meta-row">
+    <span class="ddp-diff-badge ddp-diff-medium">Medium</span>
+    <span class="ddp-pattern-pill">Sliding Window</span>
+  </div>
+
+  <!-- Body: sections -->
   <div class="ddp-body">
+    <div class="ddp-sections">
 
-    <!-- SECTION 1 — Amber: Real-world use case -->
-    <div class="ddp-sec-1">
-      <span class="ddp-sec-label">Real-World Use Case</span>
-      <div class="ddp-sec-headline">Powers real-time autocomplete that handles 50M requests per second</div>
-      <p class="ddp-sec-body">Every time you type in Google Search, Spotify, or Uber — this exact pattern runs behind the scenes. Without it, you'd be scanning the entire string repeatedly, which crashes at production scale with millions of users.</p>
-    </div>
-
-    <!-- SECTION 2 — Sage: Why you need this -->
-    <div class="ddp-sec-2">
-      <span class="ddp-sec-label">Why You Need This</span>
-      <p class="ddp-sec-body">Think of it like a camera sliding across a film strip — you only process the part in the frame, never the full strip. This is how Netflix detects buffering windows, how banks detect fraud in transaction streams, and how Amazon tracks inventory in real-time.</p>
-    </div>
-
-    <!-- SECTION 3 — Lavender: Companies & usage -->
-    <div class="ddp-sec-3">
-      <span class="ddp-sec-label">Who Uses This</span>
-      <p class="ddp-sec-body" style="margin-bottom:10px">This exact optimization appears in Google Search, Stripe's fraud pipeline, and Uber's ETA calculation engine at their core.</p>
-      <div class="ddp-chips">
-        <span class="ddp-chip">Google</span>
-        <span class="ddp-chip">Uber</span>
-        <span class="ddp-chip">Stripe</span>
-        <span class="ddp-chip">Amazon</span>
-        <span class="ddp-chip">Netflix</span>
+      <div class="ddp-section">
+        <span class="ddp-section-pill">WHAT'S GOING ON</span>
+        <div class="ddp-section-title">You're finding the longest substring without repeats.</div>
+        <p class="ddp-section-body">A moving window expands right and shrinks left whenever a duplicate enters the frame. The key insight is using a hash map to track positions, not just presence.</p>
       </div>
-    </div>
 
-  </div><!-- /body -->
+      <div class="ddp-section">
+        <span class="ddp-section-pill">REAL USE</span>
+        <div class="ddp-section-title">Browser history deduplication at O(n).</div>
+        <p class="ddp-section-body">Chrome's tab deduplication engine uses exactly this to find repeated URLs in a session without a full O(n²) scan.</p>
+      </div>
+
+      <div class="ddp-section">
+        <span class="ddp-section-pill">IF YOU MESS THIS UP</span>
+        <div class="ddp-section-title">You'll pass 90% of tests and fail on Unicode.</div>
+        <p class="ddp-section-body">Using a plain array indexed by char code breaks on multi-byte chars. Production bugs ship this way every quarter.</p>
+      </div>
+
+    </div>
+  </div>
 
   <!-- Footer -->
   <div class="ddp-footer">
@@ -77,12 +77,12 @@
       Timer
     </button>
     <button class="ddp-btn ddp-btn-secondary">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Deep Dive
     </button>
     <button class="ddp-btn ddp-btn-success">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-      Solved!
+      Solved
     </button>
   </div>
 
@@ -94,7 +94,7 @@
   <div class="ddp-header">
     <div class="ddp-header-left">
       <div class="ddp-logo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
       </div>
       <span class="ddp-title">DSA Engine</span>
     </div>
@@ -105,9 +105,10 @@
     </div>
   </div>
   <div class="ddp-body">
-    <div class="ddp-ai-error">
+    <div class="ddp-error-box">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      AI is not working from backend
+      <p>AI is not available — backend may be cold-starting.</p>
+      <small>Retry in 10 seconds</small>
     </div>
   </div>
 </div>

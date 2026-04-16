@@ -11,6 +11,21 @@
   let timerInterval = null;
   let panelInitialized = false;
 
+  // ── Encoding fix: clean mojibake from AI responses ──
+  function cleanText(s) {
+    if (!s) return s;
+    return s
+      .replace(/â€"/g,  '—')
+      .replace(/â€˜/g,  '\u2018')
+      .replace(/â€™/g,  '\u2019')
+      .replace(/â€œ/g,  '\u201C')
+      .replace(/â€/g,   '\u201D')
+      .replace(/Â·/g,   '·')
+      .replace(/Â²/g,   '²')
+      .replace(/Â³/g,   '³')
+      .replace(/Â /g,   ' ');
+  }
+
   // ── STEP 1: Extract problem data from LeetCode DOM ──
   // LeetCode changes class names frequently — we try many selectors + URL fallback
   function extractProblemData() {
@@ -297,47 +312,46 @@
     const whatBreaks      = insights.whatBreaks      || insights.whyItHurts     || insights.costOfGettingWrong || '';
     const intuitionShift  = insights.intuitionShift  || '';
 
+    // Fix encoding issues from AI backend (mojibake em-dashes etc.)
+    const clean = cleanText;
+
     let html = `<div class="ddp-meta-row">
       <span class="ddp-diff-badge ddp-diff-${diffClass}">${insights.difficulty || data.difficulty || 'Unknown'}</span>
-      ${pattern ? `<span class="ddp-pattern-pill">${pattern}</span>` : ''}
+      ${pattern ? `<span class="ddp-pattern-pill">${clean(pattern)}</span>` : ''}
     </div><div class="ddp-sections">`;
 
     if (whatIsThis) {
       html += `<div class="ddp-section">
         <span class="ddp-section-pill">WHAT'S GOING ON</span>
-        <div class="ddp-section-title">${whatIsThis.split('.')[0]}.</div>
-        <p class="ddp-section-body">${whatIsThis}</p>
+        <p class="ddp-section-body">${clean(whatIsThis)}</p>
       </div>`;
     }
 
     if (realUse) {
       html += `<div class="ddp-section">
         <span class="ddp-section-pill">REAL USE</span>
-        <div class="ddp-section-title">${realUse.split('.')[0]}.</div>
-        <p class="ddp-section-body">${realUse}</p>
+        <p class="ddp-section-body">${clean(realUse)}</p>
       </div>`;
     }
 
     if (whyThisApproach) {
       html += `<div class="ddp-section">
         <span class="ddp-section-pill">WHY THIS WAY</span>
-        <div class="ddp-section-title">${whyThisApproach.split('.')[0]}.</div>
-        <p class="ddp-section-body">${whyThisApproach}</p>
+        <p class="ddp-section-body">${clean(whyThisApproach)}</p>
       </div>`;
     }
 
     if (whatBreaks) {
       html += `<div class="ddp-section">
         <span class="ddp-section-pill">IF YOU MESS THIS UP</span>
-        <div class="ddp-section-title">${whatBreaks.split('.')[0]}.</div>
-        <p class="ddp-section-body">${whatBreaks}</p>
+        <p class="ddp-section-body">${clean(whatBreaks)}</p>
       </div>`;
     }
 
     if (intuitionShift) {
       html += `<div class="ddp-intuition">
         <span class="ddp-intuition-label">THE CLICK</span>
-        <p class="ddp-intuition-text">${intuitionShift}</p>
+        <p class="ddp-intuition-text">${clean(intuitionShift)}</p>
       </div>`;
     }
 
@@ -415,11 +429,11 @@
 
           let html = `<span class="ddp-deep-label">Deep Dive</span>`;
 
-          if (sysDesign) html += `<p class="ddp-deep-body">${sysDesign}</p>`;
-          if (mental)    html += `<p class="ddp-deep-body" style="font-style:italic">${mental}</p>`;
-          if (costWrong) html += `<p class="ddp-deep-body">${costWrong}</p>`;
-          if (skillGain) html += `<p class="ddp-deep-body">${skillGain}</p>`;
-          if (whyAsk)    html += `<p class="ddp-deep-body">${whyAsk}</p>`;
+          if (sysDesign) html += `<p class="ddp-deep-body">${cleanText(sysDesign)}</p>`;
+          if (mental)    html += `<p class="ddp-deep-body" style="font-style:italic">${cleanText(mental)}</p>`;
+          if (costWrong) html += `<p class="ddp-deep-body">${cleanText(costWrong)}</p>`;
+          if (skillGain) html += `<p class="ddp-deep-body">${cleanText(skillGain)}</p>`;
+          if (whyAsk)    html += `<p class="ddp-deep-body">${cleanText(whyAsk)}</p>`;
 
           if (edges.length || followUps.length || timeVal || spaceVal) {
             html += `<div class="ddp-deep-chips">`;
@@ -491,9 +505,10 @@
     const body = document.getElementById('ddp-body');
     if (body) {
       body.innerHTML = `
-        <div class="ddp-ai-error">
+        <div class="ddp-error-box">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          AI is not working from backend
+          <p>${message}</p>
+          <small>Refresh the page to retry</small>
         </div>`;
     }
   }

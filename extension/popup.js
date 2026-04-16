@@ -127,60 +127,60 @@ function showReportModal(report) {
 
   const lvl = (report.predictedLevel || 'Intermediate').toLowerCase();
   const lvlColor = {
-    beginner:'#15803d', apprentice:'#15803d',
-    intermediate:'#b45309', advanced:'#b45309',
-    expert:'#111', master:'#111'
-  }[lvl] || '#111';
+    beginner:'#1A7A4A', apprentice:'#1A7A4A',
+    intermediate:'#B36B00', advanced:'#B36B00',
+    expert:'#1A1A1A', master:'#1A1A1A'
+  }[lvl] || '#1A1A1A';
 
   const modal = document.createElement('div');
   modal.id = 'report-modal';
   modal.style.cssText = `
-    position:fixed;inset:0;background:rgba(0,0,0,0.5);
+    position:fixed;inset:0;background:rgba(26,26,26,0.5);
     backdrop-filter:blur(8px);z-index:9999;overflow-y:auto;padding:14px;
     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   `;
 
   modal.innerHTML = `
     <style>@keyframes fadeIn{from{opacity:0;transform:scale(0.97)}to{opacity:1;transform:none}}</style>
-    <div style="background:#FAF8F3;border:1px solid rgba(0,0,0,0.08);border-radius:18px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,0.3);animation:fadeIn 0.22s ease;">
-      <div style="padding:14px 16px 13px;border-bottom:1px solid rgba(0,0,0,0.07);display:flex;align-items:center;justify-content:space-between;">
+    <div style="background:#FDFAF4;border:1px solid #E8E3D8;border-radius:20px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,0.2);animation:fadeIn 0.22s ease;">
+      <div style="padding:14px 16px 13px;border-bottom:1px solid #E8E3D8;display:flex;align-items:center;justify-content:space-between;background:#1A1A1A;">
         <div style="display:flex;align-items:center;gap:9px;">
-          <div style="width:28px;height:28px;background:#111;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FAF8F3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
+          <div style="width:28px;height:28px;background:#F5A623;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
           </div>
-          <span style="font-size:13px;font-weight:700;color:#111;letter-spacing:-0.2px;">AI Coach Report</span>
+          <span style="font-size:13px;font-weight:700;color:#FFFFFF;letter-spacing:-0.2px;">AI Coach Report</span>
         </div>
-        <button id="close-report" style="width:26px;height:26px;background:transparent;border:1px solid rgba(0,0,0,0.12);border-radius:50%;color:rgba(0,0,0,0.35);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;">&#x2715;</button>
+        <button id="close-report" style="width:26px;height:26px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:rgba(255,255,255,0.6);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;">&#x2715;</button>
       </div>
-      <div style="padding:16px;display:flex;flex-direction:column;gap:14px;">
-        <div style="background:#FFF8EE;border-left:3px solid #E8A020;padding:12px 12px 12px 10px;border-radius:0 10px 10px 0;">
-          <div style="font-size:8.5px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:rgba(146,64,14,0.7);margin-bottom:6px;">Predicted Level</div>
+      <div style="padding:16px;display:flex;flex-direction:column;gap:14px;background:#FDFAF4;">
+        <div style="background:#FFF3DC;border-left:3px solid #F5A623;padding:12px 12px 12px 10px;border-radius:0 10px 10px 0;">
+          <div style="font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:6px;">Predicted Level</div>
           <span style="font-size:12px;font-weight:700;color:${lvlColor};">${report.predictedLevel || 'Intermediate'}</span>
         </div>
         <div>
-          <div style="font-size:8.5px;font-weight:600;color:rgba(0,0,0,0.3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Assessment</div>
-          <p style="font-size:12px;line-height:1.7;margin:0;color:rgba(0,0,0,0.55);font-weight:400;">${report.overallAssessment || ''}</p>
+          <div style="font-size:8.5px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Assessment</div>
+          <p style="font-size:12px;line-height:1.7;margin:0;color:#444;">${report.overallAssessment || ''}</p>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <div style="border:1px solid rgba(0,0,0,0.08);border-radius:10px;padding:11px;">
-            <div style="font-size:8.5px;font-weight:600;color:#15803d;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:7px;">Strong At</div>
-            <div style="display:flex;flex-direction:column;gap:4px;">${(report.strongTopics||[]).map(t=>`<span style="font-size:10.5px;font-weight:500;color:#15803d;">${t}</span>`).join('')}</div>
+          <div style="border:1px solid #E8E3D8;border-radius:10px;padding:11px;background:#fff;">
+            <div style="font-size:8.5px;font-weight:700;color:#1A7A4A;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:7px;">Strong At</div>
+            <div style="display:flex;flex-direction:column;gap:4px;">${(report.strongTopics||[]).map(t=>`<span style="font-size:10.5px;font-weight:600;color:#1A7A4A;">${t}</span>`).join('')}</div>
           </div>
-          <div style="border:1px solid rgba(0,0,0,0.08);border-radius:10px;padding:11px;">
-            <div style="font-size:8.5px;font-weight:600;color:#b91c1c;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:7px;">Work On</div>
-            <div style="display:flex;flex-direction:column;gap:4px;">${(report.weakTopics||[]).map(t=>`<span style="font-size:10.5px;font-weight:500;color:#b91c1c;">${t}</span>`).join('')}</div>
+          <div style="border:1px solid #E8E3D8;border-radius:10px;padding:11px;background:#fff;">
+            <div style="font-size:8.5px;font-weight:700;color:#C0392B;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:7px;">Work On</div>
+            <div style="display:flex;flex-direction:column;gap:4px;">${(report.weakTopics||[]).map(t=>`<span style="font-size:10.5px;font-weight:600;color:#C0392B;">${t}</span>`).join('')}</div>
           </div>
         </div>
         <div>
-          <div style="font-size:8.5px;font-weight:600;color:rgba(0,0,0,0.3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Key Insight</div>
-          <p style="font-size:12px;line-height:1.7;margin:0;color:rgba(0,0,0,0.55);">${report.insight || ''}</p>
+          <div style="font-size:8.5px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Key Insight</div>
+          <p style="font-size:12px;line-height:1.7;margin:0;color:#444;">${report.insight || ''}</p>
         </div>
         <div>
-          <div style="font-size:8.5px;font-weight:600;color:rgba(0,0,0,0.3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Focus Next</div>
-          <p style="font-size:12px;line-height:1.7;margin:0;color:rgba(0,0,0,0.55);">${report.recommendation || ''}</p>
+          <div style="font-size:8.5px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Focus Next</div>
+          <p style="font-size:12px;line-height:1.7;margin:0;color:#444;">${report.recommendation || ''}</p>
         </div>
-        <div style="border-top:1px solid rgba(0,0,0,0.07);padding-top:12px;">
-          <p style="font-size:12px;font-style:italic;color:rgba(0,0,0,0.4);margin:0;line-height:1.65;text-align:center;">"${report.motivationalMessage || 'Every problem you solve sharpens the edge.'}"</p>
+        <div style="border-top:1px solid #E8E3D8;padding-top:12px;background:#1A1A1A;margin:-16px;margin-top:0;padding:16px;border-radius:0 0 20px 20px;">
+          <p style="font-size:12px;font-style:italic;color:rgba(255,255,255,0.6);margin:0;line-height:1.65;text-align:center;">"${report.motivationalMessage || 'Every problem you solve sharpens the edge.'}"</p>
         </div>
       </div>
     </div>`;

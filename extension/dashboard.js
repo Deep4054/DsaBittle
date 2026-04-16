@@ -89,7 +89,7 @@ function renderTags(id, items, valKey, fmtFn, slow = false) {
   const el = document.getElementById(id);
   if (!el) return;
   if (!items.length) {
-    el.innerHTML = '<span style="font-size:12px;color:var(--text-3)">Not enough data yet</span>';
+    el.innerHTML = '<span style="font-size:12px;color:var(--ink3)">Not enough data yet</span>';
     return;
   }
   const max = Math.max(...items.map(t => t[valKey] || 0), 1);
@@ -178,7 +178,7 @@ async function render() {
   const hl = document.getElementById('history-list');
   if (!hl) return;
   if (!history.length) {
-    hl.innerHTML = '<p style="text-align:center;color:var(--text-3);font-size:13px;padding:20px">No problems solved yet</p>';
+    hl.innerHTML = '<p style="text-align:center;color:var(--ink3);font-size:13px;padding:20px">No problems solved yet</p>';
   } else {
     hl.innerHTML = history.slice(0, 15).map(item => {
       const d    = (item.difficulty || 'easy').toLowerCase();
@@ -256,7 +256,7 @@ document.getElementById('btn-report').addEventListener('click', async () => {
   const reportBtnHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> AI Coaching Report`;
 
   if (!history.length) {
-    body.innerHTML = '<p style="text-align:center;color:var(--text-3);padding:40px;font-size:14px">Solve at least one problem first, then come back for your report.</p>';
+    body.innerHTML = '<p style="text-align:center;color:var(--ink3);padding:40px;font-size:14px">Solve at least one problem first, then come back for your report.</p>';
     btn.disabled = false; btn.innerHTML = reportBtnHTML;
     return;
   }
@@ -306,9 +306,9 @@ document.getElementById('btn-report').addEventListener('click', async () => {
   } catch (e) {
     body.innerHTML = `<div style="text-align:center;padding:40px">
       <div style="font-size:32px;margin-bottom:12px">⚠️</div>
-      <p style="font-size:15px;font-weight:700;color:#f1f5f9;margin-bottom:8px">AI Report Unavailable</p>
-      <p style="font-size:13px;color:#64748b;line-height:1.6">The AI backend is cold-starting on Railway.<br>Wait 10 seconds and try again.</p>
-      <button id="error-close-btn" style="margin-top:20px;padding:10px 24px;background:rgba(108,99,255,0.15);border:1px solid rgba(108,99,255,0.3);color:#a78bfa;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;">Close</button>
+      <p style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:8px">AI Report Unavailable</p>
+      <p style="font-size:13px;color:var(--ink2);line-height:1.6">The AI backend is cold-starting on Railway.<br>Wait 10 seconds and try again.</p>
+      <button id="error-close-btn" style="margin-top:20px;padding:10px 24px;background:var(--ink);border:none;color:#fff;border-radius:999px;cursor:pointer;font-size:13px;font-weight:600;">Close</button>
     </div>`;
     document.getElementById('error-close-btn')?.addEventListener('click', () => {
       document.getElementById('overlay').classList.remove('open');
