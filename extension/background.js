@@ -2,13 +2,26 @@
 // Handles all API calls, storage, and message routing
 
 // ── Backend URL Config ──
-// LOCAL DEV: uses localhost:8000
-// PRODUCTION: set your Railway URL once via:
-//   chrome.storage.local.set({ backendUrl: 'https://YOUR-APP.up.railway.app' })
-// Or update PRODUCTION_URL below after deploying to Railway:
 const PRODUCTION_URL = 'https://dsabittle-production.up.railway.app';
 const LOCAL_URL      = 'http://localhost:8000';
 const BACKEND_URL    = PRODUCTION_URL || LOCAL_URL;
+
+// ── Fetch with timeout (handles Railway cold-start hangs) ──
+async function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timer);
+    return res;
+  } catch (err) {
+    clearTimeout(timer);
+    if (err.name === 'AbortError') {
+      throw new Error(`Request timed out after ${timeoutMs / 1000}s — Railway may be cold-starting, try again in 10s`);
+    }
+    throw err;
+  }
+}
 
 
 // ── Message Router ──
@@ -62,7 +75,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // ── AI Analysis via FastAPI Backend ──
 async function analyzeProblem(data) {
   try {
-    const response = await fetch(`${BACKEND_URL}/analyze-problem`, {
+    const response = await fetchWithTimeout(`${BACKEND_URL}/analyze-problem`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -134,7 +147,7 @@ function generateFallbackInsights(data) {
 // ── Deeper Explanation ──
 async function getDeeperExplanation(data) {
   try {
-    const response = await fetch(`${BACKEND_URL}/deeper-explanation`, {
+    const response = await fetchWithTimeout(`${BACKEND_URL}/deeper-explanation`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: data.title, pattern: data.pattern }),
