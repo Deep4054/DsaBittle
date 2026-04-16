@@ -1,7 +1,7 @@
 // dashboard.js — DSA Dopamine Engine Full Dashboard
 // IMPORTANT: Must be a separate file (CSP blocks inline scripts in extensions)
 
-const BACKEND = 'http://localhost:8000';
+const BACKEND = 'https://dsabittle-production.up.railway.app';
 
 const LEVELS = [
   { name: 'Beginner',     min: 0,    max: 100  },

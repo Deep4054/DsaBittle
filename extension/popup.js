@@ -1,7 +1,7 @@
 // popup.js — DSA Dopamine Engine Popup
 // Reads from chrome.storage.local and renders the mini-dashboard
 
-const BACKEND_URL = 'http://localhost:8000';
+const BACKEND_URL = 'https://dsabittle-production.up.railway.app';
 
 // ── XP level thresholds ──
 const LEVELS = [
