@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DSA Dopamine Engine</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap"
+    rel="stylesheet" />
   <link rel="stylesheet" href="popup-glass.css" />
 </head>
+
 <body class="glass-popup-body">
 
   <!-- Ambient background orbs -->
@@ -23,10 +27,11 @@
     <div class="gp-header">
       <div class="gp-brand">
         <div class="gp-logo">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-            <path d="M2 17l10 5 10-5"/>
-            <path d="M2 12l10 5 10-5"/>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+            <path d="M2 17l10 5 10-5" />
+            <path d="M2 12l10 5 10-5" />
           </svg>
         </div>
         <div class="gp-brand-text">
@@ -37,8 +42,9 @@
       <div class="gp-header-right">
         <span class="gp-level-pill" id="popup-level">Beginner</span>
         <button class="gp-minimize-btn" id="gp-minimize" title="Minimize / Expand">
-          <svg id="minimize-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="18 15 12 9 6 15"/>
+          <svg id="minimize-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="18 15 12 9 6 15" />
           </svg>
         </button>
       </div>
@@ -71,7 +77,10 @@
           <div class="gp-stat-card" data-accent="white">
             <div class="gp-stat-top">
               <div class="gp-stat-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
               </div>
               <span class="gp-stat-label">Solved</span>
             </div>
@@ -82,7 +91,11 @@
           <div class="gp-stat-card" data-accent="orange">
             <div class="gp-stat-top">
               <div class="gp-stat-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <path
+                    d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z" />
+                </svg>
               </div>
               <span class="gp-stat-label">Streak</span>
             </div>
@@ -93,7 +106,10 @@
           <div class="gp-stat-card" data-accent="purple">
             <div class="gp-stat-top">
               <div class="gp-stat-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
               </div>
               <span class="gp-stat-label">XP</span>
             </div>
@@ -104,7 +120,11 @@
           <div class="gp-stat-card" data-accent="blue">
             <div class="gp-stat-top">
               <div class="gp-stat-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="4" />
+                  <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2" />
+                </svg>
               </div>
               <span class="gp-stat-label">Today</span>
             </div>
@@ -133,24 +153,35 @@
         <div class="gp-section">
           <div class="gp-section-head">
             <span class="gp-section-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" width="13" height="13">
+                <line x1="18" y1="20" x2="18" y2="10" />
+                <line x1="12" y1="20" x2="12" y2="4" />
+                <line x1="6" y1="20" x2="6" y2="14" />
+              </svg>
               Difficulty Split
             </span>
           </div>
           <div class="gp-diff-rows">
             <div class="gp-diff-row">
               <span class="gp-diff-tag easy">Easy</span>
-              <div class="gp-diff-track"><div class="gp-diff-bar easy" id="bar-easy" style="width:0%"></div></div>
+              <div class="gp-diff-track">
+                <div class="gp-diff-bar easy" id="bar-easy" style="width:0%"></div>
+              </div>
               <span class="gp-diff-num" id="count-easy">0</span>
             </div>
             <div class="gp-diff-row">
               <span class="gp-diff-tag medium">Med</span>
-              <div class="gp-diff-track"><div class="gp-diff-bar medium" id="bar-medium" style="width:0%"></div></div>
+              <div class="gp-diff-track">
+                <div class="gp-diff-bar medium" id="bar-medium" style="width:0%"></div>
+              </div>
               <span class="gp-diff-num" id="count-medium">0</span>
             </div>
             <div class="gp-diff-row">
               <span class="gp-diff-tag hard">Hard</span>
-              <div class="gp-diff-track"><div class="gp-diff-bar hard" id="bar-hard" style="width:0%"></div></div>
+              <div class="gp-diff-track">
+                <div class="gp-diff-bar hard" id="bar-hard" style="width:0%"></div>
+              </div>
               <span class="gp-diff-num" id="count-hard">0</span>
             </div>
           </div>
@@ -160,7 +191,11 @@
         <div class="gp-section gp-section-last">
           <div class="gp-section-head">
             <span class="gp-section-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" width="13" height="13">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
               Recent Problems
             </span>
           </div>
@@ -174,21 +209,36 @@
     <!-- FOOTER ACTIONS -->
     <div class="gp-footer">
       <button class="gp-btn gp-btn-ghost" id="btn-leetcode">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <polyline points="16 18 22 12 16 6" />
+          <polyline points="8 6 2 12 8 18" />
+        </svg>
         LeetCode
       </button>
       <button class="gp-btn gp-btn-ghost" id="btn-dashboard">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7" />
+          <rect x="14" y="3" width="7" height="7" />
+          <rect x="14" y="14" width="7" height="7" />
+          <rect x="3" y="14" width="7" height="7" />
+        </svg>
         Dashboard
       </button>
       <button class="gp-btn gp-btn-primary" id="btn-report">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z" />
+          <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z" />
+        </svg>
         AI Report
       </button>
     </div>
 
   </div><!-- /glass-popup -->
 
-<script src="popup.js"></script>
+  <script src="popup.js"></script>
 </body>
+
 </html>

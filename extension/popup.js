@@ -89,6 +89,7 @@ async function renderPopup() {
   document.getElementById('xp-bar-current-level').textContent = levelInfo.current;
   document.getElementById('xp-bar-next-level').textContent    =
     levelInfo.current === 'Master' ? '🏆 Max' : `${levelInfo.next}`;
+  document.getElementById('xp-pct').textContent = `${levelInfo.pct}%`;
   setTimeout(() => {
     document.getElementById('xp-bar-fill').style.width = `${levelInfo.pct}%`;
   }, 100);
@@ -134,8 +135,9 @@ async function renderPopup() {
 
 // ── MINIMIZE / EXPAND TOGGLE ──
 (function initMinimize() {
-  const popup = document.getElementById('glass-popup');
+  const popup = document.getElementById('popup-shell');
   const btn   = document.getElementById('gp-minimize');
+  if (!popup || !btn) return;
 
   // Restore saved state
   chrome.storage.local.get(['popupMinimized'], (data) => {
@@ -161,8 +163,8 @@ document.getElementById('btn-dashboard').addEventListener('click', () => {
 
 document.getElementById('btn-report').addEventListener('click', async () => {
   const btn = document.getElementById('btn-report');
-  btn.disabled    = true;
-  btn.textContent = '⏳ Generating...';
+  btn.disabled   = true;
+  btn.innerHTML  = '⏳ Generating...';
 
   const data = await new Promise((resolve) => {
     chrome.storage.local.get(['stats', 'history'], resolve);
@@ -172,9 +174,9 @@ document.getElementById('btn-report').addEventListener('click', async () => {
   const history = data.history || [];
 
   if (history.length === 0) {
-    btn.disabled    = false;
-    btn.innerHTML   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg> AI Report`;
     showPopupToast('Solve at least one problem first! 🚀');
+    btn.disabled  = false;
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg> AI Report`;
     return;
   }
 
@@ -192,12 +194,12 @@ document.getElementById('btn-report').addEventListener('click', async () => {
   } catch (err) {
     showPopupToast('⚠️ Backend not reachable. Check Railway.');
   } finally {
-    btn.disabled    = false;
-    btn.innerHTML   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg> AI Report`;
+    btn.disabled  = false;
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg> AI Report`;
   }
 });
 
-// ── AI Report Modal (glass style) ──
+// ── AI Report Modal (warm glass style) ──
 function showReportModal(report) {
   document.getElementById('report-modal')?.remove();
 
@@ -205,74 +207,74 @@ function showReportModal(report) {
   modal.id    = 'report-modal';
   modal.style.cssText = `
     position: fixed; inset: 0;
-    background: rgba(0,0,0,0.75);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    z-index: 9999; overflow-y: auto; padding: 16px;
-    font-family: 'Inter', sans-serif; color: rgba(255,255,255,0.9);
-    animation: gpFadeIn 0.25s ease;
+    background: rgba(30, 20, 5, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    z-index: 9999; overflow-y: auto; padding: 14px;
+    font-family: 'Inter', sans-serif;
+    animation: fadeIn 0.22s ease;
   `;
 
   const lvl   = (report.predictedLevel || 'Intermediate').toLowerCase();
   const lvlColors = {
-    beginner: '#4ade80', apprentice: '#4ade80',
-    intermediate: '#fbbf24', advanced: '#f87171', expert: '#a78bfa', master: '#60a5fa'
+    beginner: '#2d8a4e', apprentice: '#2d8a4e',
+    intermediate: '#a06010', advanced: '#b03030', expert: '#7c5cbf', master: '#3a7abf'
   };
-  const color = lvlColors[lvl] || '#60a5fa';
+  const color = lvlColors[lvl] || '#3a7abf';
 
   modal.innerHTML = `
-    <style>@keyframes gpFadeIn { from{opacity:0;transform:scale(0.97)} to{opacity:1;transform:scale(1)} }</style>
-    <div style="background:rgba(15,15,25,0.85);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.12);border-radius:20px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,0.7);">
+    <style>@keyframes fadeIn { from{opacity:0} to{opacity:1} }</style>
+    <div style="background:rgba(245,238,225,0.88);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.75);border-radius:18px;overflow:hidden;box-shadow:0 24px 60px rgba(100,70,20,0.25);">
 
-      <div style="padding:16px 18px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:space-between;">
+      <div style="padding:14px 16px;border-bottom:1px solid rgba(180,140,90,0.18);display:flex;align-items:center;justify-content:space-between;background:rgba(255,252,245,0.5);">
         <div style="display:flex;align-items:center;gap:10px;">
-          <div style="width:32px;height:32px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;">🧠</div>
-          <span style="font-size:14px;font-weight:800;color:#fff;">AI Coach Report</span>
+          <div style="width:32px;height:32px;background:rgba(180,140,90,0.15);border:1px solid rgba(180,140,90,0.3);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;">🧠</div>
+          <span style="font-size:14px;font-weight:700;color:#2d2416;letter-spacing:-0.3px;">AI Coach Report</span>
         </div>
-        <button id="close-report" style="width:28px;height:28px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:7px;color:rgba(255,255,255,0.5);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">✕</button>
+        <button id="close-report" style="width:28px;height:28px;background:rgba(180,140,90,0.1);border:1px solid rgba(180,140,90,0.22);border-radius:7px;color:rgba(80,60,30,0.5);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">✕</button>
       </div>
 
-      <div style="padding:16px 18px;display:flex;flex-direction:column;gap:14px;">
+      <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px;">
 
         <div>
-          <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">Predicted Level</div>
-          <span style="font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.14);color:${color};">
+          <div style="font-size:9px;font-weight:700;color:rgba(80,60,30,0.45);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">Predicted Level</div>
+          <span style="font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;background:rgba(180,140,90,0.12);border:1px solid rgba(180,140,90,0.25);color:${color};">
             ✦ ${report.predictedLevel || 'Intermediate'}
           </span>
         </div>
 
         <div>
-          <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">Where You Stand</div>
-          <p style="font-size:13px;line-height:1.65;margin:0;color:rgba(255,255,255,0.85);">${report.overallAssessment || ''}</p>
+          <div style="font-size:9px;font-weight:700;color:rgba(80,60,30,0.45);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">Where You Stand</div>
+          <p style="font-size:12px;line-height:1.65;margin:0;color:#3d2a08;">${report.overallAssessment || ''}</p>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;">
-            <div style="font-size:9px;font-weight:700;color:#4ade80;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">💪 Strong</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div style="background:rgba(255,252,245,0.6);border:1px solid rgba(180,140,90,0.2);border-radius:10px;padding:11px;">
+            <div style="font-size:9px;font-weight:700;color:#2d8a4e;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:7px;">💪 Strong</div>
             <div style="display:flex;flex-direction:column;gap:4px;">
-              ${(report.strongTopics || []).map(t => `<span style="font-size:11px;background:rgba(74,222,128,0.1);color:#4ade80;padding:3px 8px;border-radius:20px;border:1px solid rgba(74,222,128,0.2);">${t}</span>`).join('')}
+              ${(report.strongTopics || []).map(t => `<span style="font-size:10px;background:rgba(74,222,128,0.1);color:#2d8a4e;padding:3px 8px;border-radius:20px;border:1px solid rgba(74,222,128,0.25);">${t}</span>`).join('')}
             </div>
           </div>
-          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;">
-            <div style="font-size:9px;font-weight:700;color:#f87171;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">⚠️ Work On</div>
+          <div style="background:rgba(255,252,245,0.6);border:1px solid rgba(180,140,90,0.2);border-radius:10px;padding:11px;">
+            <div style="font-size:9px;font-weight:700;color:#b03030;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:7px;">⚠️ Work On</div>
             <div style="display:flex;flex-direction:column;gap:4px;">
-              ${(report.weakTopics || []).map(t => `<span style="font-size:11px;background:rgba(248,113,113,0.1);color:#f87171;padding:3px 8px;border-radius:20px;border:1px solid rgba(248,113,113,0.2);">${t}</span>`).join('')}
+              ${(report.weakTopics || []).map(t => `<span style="font-size:10px;background:rgba(220,80,80,0.1);color:#b03030;padding:3px 8px;border-radius:20px;border:1px solid rgba(220,80,80,0.2);">${t}</span>`).join('')}
             </div>
           </div>
         </div>
 
-        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:13px;">
-          <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">🔍 Key Insight</div>
-          <p style="font-size:13px;line-height:1.65;margin:0;color:rgba(255,255,255,0.85);">${report.insight || ''}</p>
+        <div style="background:rgba(255,252,245,0.6);border:1px solid rgba(180,140,90,0.2);border-radius:10px;padding:12px;">
+          <div style="font-size:9px;font-weight:700;color:rgba(80,60,30,0.45);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">🔍 Key Insight</div>
+          <p style="font-size:12px;line-height:1.65;margin:0;color:#3d2a08;">${report.insight || ''}</p>
         </div>
 
         <div>
-          <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">🎯 Focus Next</div>
-          <p style="font-size:13px;line-height:1.65;margin:0;color:rgba(255,255,255,0.85);">${report.recommendation || ''}</p>
+          <div style="font-size:9px;font-weight:700;color:rgba(80,60,30,0.45);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;">🎯 Focus Next</div>
+          <p style="font-size:12px;line-height:1.65;margin:0;color:#3d2a08;">${report.recommendation || ''}</p>
         </div>
 
-        <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:13px;text-align:center;">
-          <p style="font-size:13px;font-style:italic;color:rgba(255,255,255,0.7);margin:0;line-height:1.6;">"${report.motivationalMessage || 'Every problem you solve sharpens the edge.'}"</p>
+        <div style="background:rgba(180,140,90,0.08);border:1px solid rgba(180,140,90,0.2);border-radius:10px;padding:12px;text-align:center;">
+          <p style="font-size:12px;font-style:italic;color:rgba(80,60,30,0.65);margin:0;line-height:1.6;">"${report.motivationalMessage || 'Every problem you solve sharpens the edge.'}"</p>
         </div>
 
       </div>
