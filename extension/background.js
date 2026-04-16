@@ -6,21 +6,32 @@ const PRODUCTION_URL = 'https://dsabittle-production.up.railway.app';
 const LOCAL_URL      = 'http://localhost:8000';
 const BACKEND_URL    = PRODUCTION_URL || LOCAL_URL;
 
-// ── Fetch with timeout (handles Railway cold-start hangs) ──
-async function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(url, { ...options, signal: controller.signal });
-    clearTimeout(timer);
-    return res;
-  } catch (err) {
-    clearTimeout(timer);
-    if (err.name === 'AbortError') {
-      throw new Error(`Request timed out after ${timeoutMs / 1000}s — Railway may be cold-starting, try again in 10s`);
+// ── Fetch with retry + timeout (handles Railway cold-start drops) ──
+// Railway free tier drops the TCP connection during cold-start,
+// causing 'Failed to fetch'. We retry up to 3 times with backoff.
+async function fetchWithRetry(url, options = {}, { retries = 3, timeoutMs = 15000, backoffMs = 2000 } = {}) {
+  let lastErr;
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      console.log(`[DSA Engine] fetch attempt ${attempt}/${retries}: ${url}`);
+      const res = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timer);
+      return res;
+    } catch (err) {
+      clearTimeout(timer);
+      lastErr = err.name === 'AbortError'
+        ? new Error(`Timeout after ${timeoutMs / 1000}s`)
+        : err;
+      console.warn(`[DSA Engine] attempt ${attempt} failed:`, lastErr.message);
+      if (attempt < retries) {
+        // Exponential backoff: 2s, 4s
+        await new Promise(r => setTimeout(r, backoffMs * attempt));
+      }
     }
-    throw err;
   }
+  throw lastErr;
 }
 
 
@@ -75,7 +86,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // ── AI Analysis via FastAPI Backend ──
 async function analyzeProblem(data) {
   try {
-    const response = await fetchWithTimeout(`${BACKEND_URL}/analyze-problem`, {
+    const response = await fetchWithRetry(`${BACKEND_URL}/analyze-problem`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -147,7 +158,7 @@ function generateFallbackInsights(data) {
 // ── Deeper Explanation ──
 async function getDeeperExplanation(data) {
   try {
-    const response = await fetchWithTimeout(`${BACKEND_URL}/deeper-explanation`, {
+    const response = await fetchWithRetry(`${BACKEND_URL}/deeper-explanation`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: data.title, pattern: data.pattern }),
@@ -309,12 +320,25 @@ async function clearAllData() {
   return { success: true };
 }
 
-// ── Alarm for weekly report reminder ──
+// ── Alarms: weekly report + Railway keep-alive ──
 chrome.runtime.onInstalled.addListener(() => {
+  // Weekly report reminder
   chrome.alarms.create('weekly-report', {
-    periodInMinutes: 60 * 24 * 7, // Once a week
+    periodInMinutes: 60 * 24 * 7,
+  });
+  // Keep Railway warm — ping every 4 minutes to prevent cold-starts
+  chrome.alarms.create('keep-alive', {
+    periodInMinutes: 4,
   });
   console.log('[DSA Engine] Extension installed. Backend:', BACKEND_URL);
+});
+
+// Also recreate keep-alive on service worker startup (in case it was lost)
+chrome.alarms.get('keep-alive', (alarm) => {
+  if (!alarm) {
+    chrome.alarms.create('keep-alive', { periodInMinutes: 4 });
+    console.log('[DSA Engine] Recreated keep-alive alarm');
+  }
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -330,5 +354,13 @@ chrome.alarms.onAlarm.addListener((alarm) => {
         });
       }
     });
+  }
+
+  if (alarm.name === 'keep-alive') {
+    // Silent ping to keep Railway from sleeping
+    fetch(`${BACKEND_URL}/health`)
+      .then(r => r.json())
+      .then(d => console.log('[DSA Engine] Keep-alive ping OK:', d.status))
+      .catch(e => console.warn('[DSA Engine] Keep-alive ping failed:', e.message));
   }
 });
