@@ -34,39 +34,44 @@ POWER_MODEL = "meta/llama-3.3-70b-instruct"   # heavy  — core analysis
 
 ANALYZE_PROMPT = """
 You are a senior engineer who has worked at Google, Uber, Stripe, and startups.
-You explain DSA problems to a smart friend who needs to understand WHY — not just WHAT.
-Your vibe: senior dev over coffee, not a textbook. Direct. Real.
-You use actual app names, actual features, actual failure modes.
-You do NOT use bullet points, key-value labels, or formal headers. You write flowing casual paragraphs like a human talking.
+Your vibe: dev talking to dev — casual, direct, specific. No textbook, no email-template tone.
 
 Problem: "{title}"
 Difficulty: {difficulty}
 Tags: {tags}
 Description: {description}
 
+STEP 1 — Classify the problem type (internal, don't output this):
+- DSA / algorithm / data structure → talk about algorithmic constraints, performance at scale
+- Data manipulation (pandas, SQL, ETL, schema) → talk about pipelines, schema mismatches, downstream breakage
+- Math / logic / basic utility → keep it grounded, don't force production drama
+- String / regex / parsing → talk about text processing pipelines, log parsing, config validation
+
+Do NOT force scale/latency/SLA if it doesn't naturally apply.
+A pandas column rename is NOT a performance bottleneck — it's a schema consistency problem.
+Not every problem is a production incident waiting to happen. Be honest.
+
+STEP 2 — Write the JSON output matching the actual problem type:
+
 RULES:
-1. NEVER write like an email template. No 'Real-World Application:', no labels. Just talk.
-2. Answer 'bro why should I actually care about this' — directly, specifically, with urgency.
-3. Be specific. Don't say 'used in many applications.' Say WHICH app, WHICH feature, WHICH moment.
-4. Make the pain of NOT knowing this feel real. Production bugs, latency spikes. Not dramatic — accurate.
-5. Short, dense. Every sentence earns its place. No filler.
-6. Use casual register: 'you', 'your', 'basically', 'look', 'here's the thing', 'honestly'.
-7. If a field has nothing useful to say, return an empty string. Do not pad with generic filler.
+1. Be specific. Don't say 'used in many applications.' Say WHICH app, WHICH feature, WHICH moment.
+2. Short and dense. Every sentence earns its place.
+3. Casual register: 'you', 'your', 'basically', 'look', 'honestly'.
+4. If a field has nothing useful, return empty string. No filler.
 
 Return ONLY valid JSON (no markdown, no backticks, no preamble):
 {{
-  "pattern": "Two Pointers | Hash Map | BFS | Dynamic Programming | Sliding Window | etc",
+  "pattern": "Sliding Window | Hash Map | Schema Transformation | BFS | etc — whatever fits",
   "difficulty": "{difficulty}",
-  "realWorldStory": "2-4 sentences. Start with a real app and where exactly this algo runs inside it. Make it specific and tangible. Example: 'Every time you split a bill on Splitwise, their backend runs something like this. Without an efficient lookup, it scans every transaction for every person. At 10M users that's not slow, it's dead.'",
-  "whyItHurts": "2-3 sentences. What actually breaks in production if you get this wrong — slow queries, memory blowup, SLA miss, 500 errors. Example: 'Brute force works fine on your laptop with 10 items. At 100K transactions it's already lagging. At 1M it's a customer support ticket. At 10M it's an incident report.'",
-  "casualUseCase": "A flowing paragraph (not a list). 2-3 casual real-world scenarios as flowing text. Example: 'Tinder's swipe queue is basically this. Netflix figuring out what to buffer next — same idea. Your IDE autocomplete? Yep, every keystroke.'",
-  "whySolveIt": "1-2 sentences. The honest reason this exists in interviews and codebases. Example: 'Companies ask this because it shows you know when brute force will kill you in prod. That's a 100x salary decision for them.'",
-  "companiesContext": "1-2 sentences about what KIND of teams hit this and why. Don't just list names. Example: 'Any team running a recommendation engine, feed, or search bar has dealt with this. That's basically every company post Series A.'",
-  "companies": ["Real company names only, no descriptions — e.g. Google, Uber, Stripe, Amazon"],
-  "costOfGettingWrong": "One sentence. Specific consequence of naive solution at real scale.",
-  "skillYouGain": "One sentence. What specific thing you can now build or debug that you couldn't before."
+  "realWorldStory": "2-4 sentences. Where does this exact operation show up in a real system? Be specific to the problem type. For data problems: 'Imagine your backend sends column X but the dashboard expects column Y — silently breaks.' For algo problems: 'Every time you type in Google Search, this runs.'",
+  "whyItHurts": "2-3 sentences. What actually breaks if you get this wrong? Match the problem type — for data: silent bugs, mismatched joins, broken dashboards. For algo: latency, memory, timeouts. Don't force scale drama on simple problems.",
+  "casualUseCase": "A flowing paragraph. 2-3 real scenarios that match THIS problem type. Data problems → mention ETL, pipelines, APIs. Algo problems → mention apps, scale, real features.",
+  "whySolveIt": "1-2 sentences. Honest reason this exists in interviews and codebases.",
+  "companiesContext": "1-2 sentences about which teams actually hit this. Match the problem type.",
+  "companies": ["Real company names — e.g. Google, Stripe, Airbnb, Meta"],
+  "costOfGettingWrong": "One sentence. The real consequence — match the problem (data bugs, perf issues, etc).",
+  "skillYouGain": "One sentence. What can you now build or debug that you couldn't before."
 }}"""
-
 
 
 DEEPER_PROMPT = """
@@ -308,57 +313,87 @@ def _fallback_analysis(data: ProblemInput) -> dict:
     title = data.title or "this problem"
     tags_lower = [t.lower() for t in (data.tags or [])]
 
-    # Map patterns to production contexts
+    # Map patterns to production contexts — data problems get pipeline context, algo gets scale context
     pattern_context = {
+        "pandas": {
+            "pattern": "Schema Transformation",
+            "production": "Data pipelines, ETL jobs, analytics dashboards",
+            "signal": "Mismatched column names breaking downstream joins or dashboards silently"
+        },
+        "dataframe": {
+            "pattern": "Schema Transformation",
+            "production": "Data pipelines, ETL jobs, analytics dashboards",
+            "signal": "Column name mismatches silently breaking reports and API contracts"
+        },
+        "database": {
+            "pattern": "Query Optimization",
+            "production": "Backend APIs, analytics queries, reporting systems",
+            "signal": "Slow queries degrading API response times under real data volume"
+        },
+        "sql": {
+            "pattern": "Query Optimization",
+            "production": "Reporting pipelines, admin dashboards, analytics backends",
+            "signal": "Full table scans making dashboards timeout under production data size"
+        },
         "binary search": {
             "pattern": "Search Space Pruning",
-            "production": "Finding thresholds at scale (pricing tiers, feature flags, system limits)",
-            "signal": "Latency > threshold causing timeouts in search/matching"
+            "production": "Finding thresholds at scale: pricing tiers, feature flags, system limits",
+            "signal": "Linear scan timing out on sorted datasets with 1M+ entries"
         },
         "two pointers": {
             "pattern": "Multi-Index Traversal",
-            "production": "Collision detection, matching, duplicate removal in streams",
-            "signal": "O(n²) naive solution timing out with real data"
+            "production": "Collision detection, deduplication, matching in data streams",
+            "signal": "O(n²) naive solution timing out on real data volumes"
         },
         "sliding window": {
             "pattern": "Constraint-Based Window",
             "production": "Rate limiting, time-series aggregation, buffer management",
-            "signal": "Memory spikes when processing continuous data streams"
+            "signal": "Memory spikes when processing continuous data streams naively"
         },
         "dynamic programming": {
             "pattern": "State Memoization",
-            "production": "Cost optimization in decision trees, resource allocation, caching strategies",
+            "production": "Cost optimization, resource allocation, caching decision trees",
             "signal": "Exponential blowup in recursive solutions at 1K+ input size"
         },
         "hash table": {
             "pattern": "O(1) Lookup",
             "production": "Deduplication, session management, distributed cache validation",
-            "signal": "Lookup latency becoming bottleneck as data grows"
+            "signal": "Lookup latency becoming bottleneck as data grows past memory constraints"
         },
         "graph": {
             "pattern": "Relationship Traversal",
             "production": "Recommendation systems, dependency resolution, network routing",
-            "signal": "BFS/DFS timeout when graph has >10K nodes"
+            "signal": "BFS/DFS timeout when graph exceeds 10K nodes without pruning"
         },
         "tree": {
             "pattern": "Hierarchical Search",
             "production": "Autocomplete indices, permission hierarchies, geographic partitioning",
-            "signal": "Search latency linear in tree size instead of logarithmic"
+            "signal": "Search latency scaling linearly instead of logarithmically with data size"
         },
         "stack": {
             "pattern": "LIFO Processing",
             "production": "Browser history, undo/redo, expression parsing in compilers",
-            "signal": "Recursive calls hitting stack overflow on deep inputs"
+            "signal": "Recursive calls hitting stack overflow on deep or malicious inputs"
         },
         "linked list": {
             "pattern": "Sequential Access",
-            "production": "Memory-efficient queuing, LRU cache implementation, immutable data structures",
-            "signal": "Need for efficient insertion/deletion at arbitrary positions"
+            "production": "Memory-efficient queuing, LRU cache, immutable data structures",
+            "signal": "Inefficient insertions causing GC pressure in high-throughput systems"
         },
         "string": {
             "pattern": "Pattern Matching",
-            "production": "Log parsing, config validation, text search optimization",
-            "signal": "String scanning becoming bottleneck in text processing pipeline"
+            "production": "Log parsing, config validation, text search pipelines",
+            "signal": "String scanning becoming CPU bottleneck in high-volume log processing"
+        },
+        "sorting": {
+            "pattern": "Ordered Traversal",
+            "production": "Data normalization, leaderboards, ranked API responses",
+            "signal": "Incorrect sort order causing wrong results in ranked data — silent bug"
+        },
+        "array": {
+            "pattern": "Sequential Processing",
+            "production": "Batch processing, data transformation, ETL pipelines",
+            "signal": "Inefficient traversal causing timeout on large datasets"
         },
     }
 

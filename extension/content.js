@@ -346,7 +346,7 @@
     if (sec1Text) {
       html += `
         <div class="ddp-sec-1">
-          <span class="ddp-sec-label">Real-World Use Case</span>
+          <span class="ddp-sec-label">Where This Actually Hits</span>
           <div class="ddp-sec-headline">${sec1Head}</div>
           <p class="ddp-sec-body">${sec1Text}</p>
         </div>`;
@@ -356,7 +356,7 @@
     if (sec2Text) {
       html += `
         <div class="ddp-sec-2">
-          <span class="ddp-sec-label">Why You Need This</span>
+          <span class="ddp-sec-label">What Breaks Without It</span>
           <p class="ddp-sec-body">${sec2Text}</p>
         </div>`;
     }
@@ -365,7 +365,7 @@
     if (companies.length || sec3Extra) {
       html += `
         <div class="ddp-sec-3">
-          <span class="ddp-sec-label">Who Uses This</span>
+          <span class="ddp-sec-label">Who Runs Into This</span>
           ${sec3Extra ? `<p class="ddp-sec-body" style="margin-bottom:10px">${sec3Extra}</p>` : ''}
           ${companies.length ? `<div class="ddp-chips">${companies.map(c => `<span class="ddp-chip">${c}</span>`).join('')}</div>` : ''}
         </div>`;
