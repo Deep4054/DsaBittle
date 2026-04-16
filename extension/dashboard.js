@@ -259,8 +259,8 @@ document.getElementById('btn-report').addEventListener('click', async () => {
       </div>`;
   } catch (e) {
     body.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-3)">
-      <p style="font-size:14px;margin-bottom:12px">Backend not reachable</p>
-      <code>uvicorn main:app --port 8000</code>
+      <p style="font-size:14px;margin-bottom:8px">⚠️ AI Report unavailable</p>
+      <p style="font-size:12px">Backend may be cold-starting — wait 10s and try again.</p>
     </div>`;
   }
 
