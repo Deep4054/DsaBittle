@@ -1,5 +1,4 @@
 # ai_engine.py — NVIDIA NIM AI Engine for DSA Dopamine Engine
-# Uses NVIDIA NIM API (OpenAI-compatible) with Llama / Nemotron models
 
 import os
 import json
@@ -8,11 +7,8 @@ from openai import AsyncOpenAI
 from dotenv import load_dotenv
 from models import ProblemInput
 
-# Load .env immediately so os.getenv() works here AND in main.py
 load_dotenv()
 
-# ── Lazy client initializer ──
-# We create the client on first use so the key is always read after load_dotenv()
 _client: AsyncOpenAI | None = None
 
 def _get_client() -> AsyncOpenAI:
@@ -20,86 +16,87 @@ def _get_client() -> AsyncOpenAI:
     if _client is None:
         api_key = os.getenv("NVIDIA_NIM_API_KEY")
         if not api_key:
-            raise RuntimeError(
-                "NVIDIA_NIM_API_KEY is not set. "
-                "Create backend/.env with: NVIDIA_NIM_API_KEY=nvapi-..."
-            )
+            raise RuntimeError("NVIDIA_NIM_API_KEY is not set.")
         _client = AsyncOpenAI(
             base_url="https://integrate.api.nvidia.com/v1",
             api_key=api_key,
         )
     return _client
 
-# Model choices (both confirmed working on NVIDIA NIM free tier):
-# meta/llama-3.3-70b-instruct  → fast, cheap, high quality (confirmed 200 OK)
-# nvidia/llama-3.1-nemotron-ultra-253b-v1  → larger, for deep analysis (if quota allows)
-FAST_MODEL = "meta/llama-3.3-70b-instruct"
-POWER_MODEL = "meta/llama-3.3-70b-instruct"  # Fallback: same model, nemotron-70b 404s on free accounts
+FAST_MODEL  = "meta/llama-3.3-70b-instruct"
+POWER_MODEL = "meta/llama-3.3-70b-instruct"
+
 
 # ─────────────────────────────────────────────
-# PROMPT TEMPLATES
+# PROMPTS — Problem-specific, not pattern-generic
 # ─────────────────────────────────────────────
 
+ANALYZE_PROMPT = """You are a world-class software engineer and DSA coach.
+Your job is to make THIS SPECIFIC problem feel alive and meaningful — not give generic pattern advice.
 
-ANALYZE_PROMPT = """
-You are an expert software engineer and DSA teacher with 15+ years of experience at top tech companies.
-Analyze this coding problem and return ONLY a valid JSON object. No markdown, no explanation, just JSON.
-
-Problem Title: {title}
+Problem: "{title}"
 Difficulty: {difficulty}
 Tags: {tags}
-Description (partial): {description}
+Description: {description}
 
-Return this EXACT JSON structure:
+Think deeply about THIS problem specifically:
+- What is the EXACT real-world scenario where this problem's solution is used?
+- Not "binary search is used in databases" — but specifically what "{title}" computes and where THAT computation matters
+- Connect the actual algorithm to actual production code in actual products
+
+Return ONLY valid JSON (no markdown, no explanation):
 {{
-  "pattern": "One-line pattern name (e.g. 'Sliding Window', 'Two Pointers + HashMap')",
-  "whySolveThis": "2-3 sentences: why THIS specific problem type is critical for interview success and how mastering it unlocks a whole class of problems. Be motivating and specific.",
+  "pattern": "Precise pattern name for this specific problem",
+  "whySolveThis": "2-3 sentences specific to '{title}' — what insight does solving THIS problem give you? What class of problems does it unlock? Be concrete, not generic.",
+  "realWorldConnection": "The single most direct real-world use of THIS problem's exact computation. Example for Sqrt(x): 'Every graphics engine uses integer square root to compute pixel distances in collision detection — Unity, Unreal, and game physics engines call this thousands of times per frame.' Be THIS specific.",
   "whereUsed": [
-    "PRODUCT NAME: exactly what this algorithm does inside it and why they chose it",
-    "PRODUCT NAME: how this pattern solves a scale or performance challenge there",
-    "PRODUCT NAME: what would break in production without this approach"
+    "SPECIFIC PRODUCT: exactly how THIS problem's algorithm is used inside it — not the pattern, but this exact computation",
+    "SPECIFIC PRODUCT: another concrete use of this exact problem's solution in production",
+    "SPECIFIC PRODUCT: a third real use that would surprise most developers"
   ],
-  "whyCompaniesAsk": "2-3 sentences: the exact reason FAANG and top companies ask THIS pattern — what signal it gives about a candidate's thinking, problem decomposition, and code quality. Be candid.",
-  "companies": ["Google", "Amazon", "Meta", "Microsoft", "Apple"],
-  "analogy": "One vivid, memorable non-technical analogy a 10-year-old can understand that captures the algorithm's core insight. Make it surprising.",
+  "whyCompaniesAsk": "2-3 sentences: what THIS specific problem reveals about a candidate — not generic 'tests fundamentals' but what thinking pattern, edge case awareness, or optimization insight it exposes.",
+  "companies": ["5 real companies known to ask problems exactly like this one"],
+  "analogy": "One vivid real-world analogy SPECIFIC to this problem's algorithm. Not a generic binary search analogy — make it about what '{title}' actually computes.",
   "difficulty": "{difficulty}"
 }}
 
-Rules:
-- whereUsed items MUST start with an actual product name (Google Search, Netflix, Uber, etc.)
-- companies must be real companies known to ask this exact pattern
-- whySolveThis must be motivating and specific to THIS pattern, not generic
-- whyCompaniesAsk must explain the interview signal, not just say "it tests fundamentals"
-- Return ONLY valid JSON. No code blocks. No commentary.
-"""
+CRITICAL RULES:
+- Every field must be about "{title}" specifically, not about the general pattern
+- whereUsed items must name real products and explain the EXACT use of this computation
+- The analogy must be unique to this problem, not reusable for other problems
+- Return ONLY valid JSON"""
 
-DEEPER_PROMPT = """
-You are a senior software engineer at a FAANG company conducting a technical interview prep session.
 
-Problem: {title}
-Pattern Identified: {pattern}
+DEEPER_PROMPT = """You are a senior engineer doing a deep technical review of one specific problem.
 
-Return ONLY this JSON structure (no markdown, no explanation):
+Problem: "{title}"
+Pattern: {pattern}
+
+Think about THIS problem's unique characteristics:
+- What are the edge cases specific to "{title}" (not generic edge cases)
+- What system design scenario uses THIS exact computation
+- What follow-up problems build DIRECTLY on "{title}"
+
+Return ONLY valid JSON:
 {{
-  "systemDesignConnection": "2-3 sentences connecting this exact problem to a real distributed system or production architecture. Be specific — name actual systems.",
+  "timeComplexity": "Big-O for the optimal solution to '{title}' with a one-line justification",
+  "spaceComplexity": "Big-O with justification specific to this problem's constraints",
+  "systemDesignConnection": "2-3 sentences: a real distributed system or production scenario where '{title}' exact computation appears. Name the actual system and explain why this specific algorithm is needed there.",
   "edgeCases": [
-    "Specific edge case that trips up most candidates",
-    "Another non-obvious edge case",
-    "A third edge case related to constraints or overflow"
+    "Edge case specific to '{title}' constraints (e.g. input = 0, input = 1, overflow)",
+    "A non-obvious edge case that trips up candidates on this exact problem",
+    "A third edge case related to this problem's specific constraints"
   ],
-  "timeComplexity": "Big-O with brief justification (e.g. 'O(n log n) — sorting dominates the nested loop')",
-  "spaceComplexity": "Big-O with brief justification",
   "followUpProblems": [
-    "Exactly related harder follow-up problem name",
-    "Another follow-up that uses the same pattern differently"
+    "A harder LeetCode problem that directly extends '{title}'",
+    "A related problem that uses the same core insight differently"
   ],
-  "mentalModel": "2-3 sentences: the exact mental model an experienced engineer uses to recognize and approach this pattern instantly during an interview."
-}}
-"""
+  "mentalModel": "2-3 sentences: the exact mental model for '{title}' specifically — how an experienced engineer thinks about this problem the moment they see it, what they recognize, and how they approach it."
+}}"""
 
-DAILY_REPORT_PROMPT = """
-You are a world-class DSA coach analyzing a developer's actual coding practice data.
-Be specific, data-driven, and brutally honest — this is a premium coaching session.
+
+DAILY_REPORT_PROMPT = """You are a world-class DSA coach analyzing a developer's actual practice data.
+Be specific, data-driven, and brutally honest.
 
 Student Stats:
 {stats}
@@ -107,41 +104,33 @@ Student Stats:
 Recent Problems Solved (last {count}):
 {recent_history}
 
-Return ONLY this JSON structure (no markdown):
+Return ONLY valid JSON:
 {{
-  "overallAssessment": "2-3 sentences about where this developer currently stands, referencing their ACTUAL numbers (total solved, current streak, difficulty distribution). Be specific.",
-  "strongTopics": ["Topic they've solved most of", "Second strongest topic based on data", "Third if applicable"],
-  "weakTopics": ["Topic with fewest attempts or worst avg time", "Second weakest", "Third if applicable"],
-  "insight": "ONE specific, data-driven insight. Example: 'You solve Easy problems 3x faster than Medium — the bottleneck is your DP pattern recognition, not your coding speed.' Reference their actual stats.",
-  "recommendation": "Specific actionable directive: what exact type of problem to solve next (give a real LeetCode problem name or topic), and why based on their data gaps.",
-  "motivationalMessage": "Short, genuine message. NOT generic. Reference something specific from their data — their streak, a difficulty they conquered, or their growth trajectory.",
-  "predictedLevel": "One of: Beginner / Apprentice / Intermediate / Advanced / Expert — based on total solved count, difficulty distribution, and avg solve time"
-}}
-"""
+  "overallAssessment": "2-3 sentences referencing their ACTUAL numbers — total solved, streak, difficulty split. Be specific and honest.",
+  "strongTopics": ["Their most-solved topic", "Second strongest", "Third if applicable"],
+  "weakTopics": ["Topic with fewest attempts or worst time", "Second weakest", "Third if applicable"],
+  "insight": "ONE specific data-driven insight referencing their actual stats. Example: 'You solve Easy 3x faster than Medium — the bottleneck is DP pattern recognition, not coding speed.'",
+  "recommendation": "Specific next step: exact problem type or LeetCode problem name, and why based on their data gaps.",
+  "motivationalMessage": "Short genuine message referencing something specific from their data — streak, a hard problem they solved, or growth.",
+  "predictedLevel": "Beginner / Apprentice / Intermediate / Advanced / Expert — based on their actual data"
+}}"""
 
 
 # ─────────────────────────────────────────────
-# HELPER: Parse JSON safely (strips markdown if model adds it)
+# JSON PARSER
 # ─────────────────────────────────────────────
 
 def parse_json_response(raw: str) -> dict:
-    """Robustly extract a JSON object from LLM output.
-    Handles: plain JSON, markdown fences, leading/trailing text.
-    """
     raw = raw.strip()
-
-    # 1) Strip ```json ... ``` or ``` ... ``` wrappers
     cleaned = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
     cleaned = re.sub(r'\s*```$', '', cleaned, flags=re.MULTILINE)
     cleaned = cleaned.strip()
 
-    # 2) Try direct parse first
     try:
         return json.loads(cleaned)
     except json.JSONDecodeError:
         pass
 
-    # 3) Find the first {...} block (handles leading explanation text)
     match = re.search(r'\{[\s\S]*\}', cleaned)
     if match:
         try:
@@ -149,8 +138,7 @@ def parse_json_response(raw: str) -> dict:
         except json.JSONDecodeError:
             pass
 
-    # 4) Give up — return empty dict so callers can use their own fallback
-    raise ValueError(f"Could not parse JSON from LLM response. Raw (first 300 chars): {raw[:300]}")
+    raise ValueError(f"Could not parse JSON. Raw (first 300): {raw[:300]}")
 
 
 # ─────────────────────────────────────────────
@@ -158,13 +146,8 @@ def parse_json_response(raw: str) -> dict:
 # ─────────────────────────────────────────────
 
 async def analyze_problem(data: ProblemInput) -> dict:
-    """
-    Call NVIDIA NIM to analyze a DSA problem and return
-    real-world context, pattern, companies, analogy, and use cases.
-    Falls back to a cached response if the AI call or parsing fails.
-    """
-    tags_str = ", ".join(data.tags) if data.tags else "None provided"
-    desc_str = (data.description or "")[:600]
+    tags_str = ", ".join(data.tags) if data.tags else "not provided"
+    desc_str = (data.description or "")[:800]
 
     prompt = ANALYZE_PROMPT.format(
         title=data.title,
@@ -179,30 +162,29 @@ async def analyze_problem(data: ProblemInput) -> dict:
             messages=[
                 {
                     "role": "system",
-                    "content": "You are an expert DSA teacher. Always respond with valid JSON only. No markdown, no explanation — pure JSON.",
+                    "content": (
+                        "You are an expert DSA teacher. "
+                        "Always respond with valid JSON only. "
+                        "Make every response specific to the exact problem asked — never give generic pattern advice."
+                    ),
                 },
                 {"role": "user", "content": prompt},
             ],
-            temperature=0.7,
-            max_tokens=700,
+            temperature=0.75,
+            max_tokens=900,
         )
-
         raw = response.choices[0].message.content.strip()
         return parse_json_response(raw)
 
     except Exception as e:
-        # Return a sensible fallback so the extension still works
         import logging
         logging.getLogger("dsa-engine").warning(
-            f"analyze_problem AI call failed ({type(e).__name__}: {e}) — returning fallback"
+            f"analyze_problem failed ({type(e).__name__}: {e}) — returning fallback"
         )
         return _fallback_analysis(data)
 
 
 async def get_deeper_explanation(title: str, pattern: str) -> dict:
-    """
-    Deep-dive analysis: system design connections, edge cases, complexity, follow-ups.
-    """
     prompt = DEEPER_PROMPT.format(title=title, pattern=pattern or "General")
 
     try:
@@ -211,39 +193,39 @@ async def get_deeper_explanation(title: str, pattern: str) -> dict:
             messages=[
                 {
                     "role": "system",
-                    "content": "You are a senior FAANG engineer doing interview prep coaching. Respond with valid JSON only. No markdown, no explanation — pure JSON.",
+                    "content": (
+                        "You are a senior FAANG engineer doing interview prep. "
+                        "Respond with valid JSON only. "
+                        "Every answer must be specific to the exact problem, not generic."
+                    ),
                 },
                 {"role": "user", "content": prompt},
             ],
             temperature=0.5,
-            max_tokens=900,
+            max_tokens=1000,
         )
         raw = response.choices[0].message.content.strip()
         return parse_json_response(raw)
+
     except Exception as e:
         import logging
         logging.getLogger("dsa-engine").warning(
-            f"get_deeper_explanation AI call failed ({type(e).__name__}: {e}) — returning fallback"
+            f"get_deeper_explanation failed ({type(e).__name__}: {e}) — returning fallback"
         )
         return {
-            "timeComplexity": "O(n) — analysis unavailable",
-            "spaceComplexity": "O(1) — analysis unavailable",
-            "systemDesignConnection": "AI analysis temporarily unavailable. Try again shortly.",
-            "edgeCases": ["Empty input", "Single element", "Overflow / large numbers"],
-            "followUpProblems": ["Related problem on LeetCode"],
-            "mentalModel": "Identify the pattern, define constraints, then optimize step by step."
+            "timeComplexity": "Analysis unavailable — try again",
+            "spaceComplexity": "Analysis unavailable — try again",
+            "systemDesignConnection": "AI analysis temporarily unavailable. Refresh to retry.",
+            "edgeCases": ["Input = 0", "Input = 1", "Maximum integer value (overflow check)"],
+            "followUpProblems": ["Valid Perfect Square (LeetCode 367)", "Pow(x, n) (LeetCode 50)"],
+            "mentalModel": "Identify the search space, define the condition, then binary search on the answer."
         }
 
 
 async def generate_daily_report(history: list, stats: dict) -> dict:
-    """
-    Call GPT-4o (best model) to generate a personalized coaching
-    report based on the user's ACTUAL history and stats data.
-    """
-    recent = history[:10] if len(history) > 10 else history
+    recent = history[:10]
     count = len(recent)
 
-    # Build a cleaner stats summary for the prompt
     stats_summary = {
         "totalSolved": stats.get("totalSolved", 0),
         "easy": stats.get("easy", 0),
@@ -256,7 +238,6 @@ async def generate_daily_report(history: list, stats: dict) -> dict:
         "slowestTags": _get_slowest_tags(stats.get("tagStats", {})),
     }
 
-    # Simplify history for the prompt
     simple_history = [
         {
             "title": item.get("title"),
@@ -279,12 +260,12 @@ async def generate_daily_report(history: list, stats: dict) -> dict:
         messages=[
             {
                 "role": "system",
-                "content": "You are a world-class DSA coach. Be specific, data-driven, and brutally honest. Respond with valid JSON only. No markdown, no explanation — pure JSON.",
+                "content": "You are a world-class DSA coach. Be specific and data-driven. Respond with valid JSON only.",
             },
             {"role": "user", "content": prompt},
         ],
         temperature=0.65,
-        max_tokens=700,
+        max_tokens=800,
     )
 
     raw = response.choices[0].message.content.strip()
@@ -296,13 +277,11 @@ async def generate_daily_report(history: list, stats: dict) -> dict:
 # ─────────────────────────────────────────────
 
 def _get_top_tags(tag_stats: dict, n: int = 3) -> list:
-    """Return top N tags by solve count."""
     sorted_tags = sorted(tag_stats.items(), key=lambda x: x[1].get("count", 0), reverse=True)
     return [{"tag": k, "count": v.get("count", 0)} for k, v in sorted_tags[:n]]
 
 
 def _get_slowest_tags(tag_stats: dict, n: int = 3) -> list:
-    """Return top N tags by average solve time (slowest = most time spent)."""
     sorted_tags = sorted(
         [(k, v) for k, v in tag_stats.items() if v.get("count", 0) >= 2],
         key=lambda x: x[1].get("avgTime", 0),
@@ -315,25 +294,28 @@ def _get_slowest_tags(tag_stats: dict, n: int = 3) -> list:
 
 
 def _fallback_analysis(data: ProblemInput) -> dict:
-    """Return a cached fallback when AI is unavailable."""
-    pattern_map = {
-        "array": "Array Traversal",
-        "hash table": "Hash Map Lookup",
-        "sliding window": "Sliding Window",
-        "dynamic programming": "Dynamic Programming",
-        "graph": "Graph Traversal (BFS/DFS)",
-        "tree": "Tree DFS/BFS",
-        "binary search": "Binary Search",
-        "two pointers": "Two Pointers",
-        "stack": "Monotonic Stack",
-        "heap": "Priority Queue / Heap",
-        "linked list": "Linked List Pointer",
-        "string": "String Manipulation",
-        "math": "Mathematical Reasoning",
-        "backtracking": "Backtracking / Recursion",
-        "greedy": "Greedy Algorithm",
-    }
+    """Fallback when AI is unavailable — still tries to be problem-specific."""
+    title = data.title or "this problem"
     tags_lower = [t.lower() for t in (data.tags or [])]
+
+    pattern_map = {
+        "binary search": "Binary Search on Answer",
+        "math": "Mathematical Computation",
+        "two pointers": "Two Pointers",
+        "dynamic programming": "Dynamic Programming",
+        "graph": "Graph Traversal",
+        "tree": "Tree Traversal",
+        "sliding window": "Sliding Window",
+        "hash table": "Hash Map",
+        "stack": "Stack / Monotonic Stack",
+        "heap": "Priority Queue",
+        "linked list": "Linked List",
+        "string": "String Processing",
+        "backtracking": "Backtracking",
+        "greedy": "Greedy",
+        "array": "Array Traversal",
+    }
+
     pattern = "General Problem Solving"
     for key, val in pattern_map.items():
         if any(key in t for t in tags_lower):
@@ -344,19 +326,23 @@ def _fallback_analysis(data: ProblemInput) -> dict:
         "pattern": pattern,
         "difficulty": data.difficulty or "Unknown",
         "whySolveThis": (
-            f"This {pattern} problem is a core interview pattern. "
-            "Mastering it unlocks a whole category of similar problems at FAANG. "
-            "⚠️ AI offline — showing cached insights."
+            f"'{title}' is a classic problem that builds core intuition for {pattern}. "
+            "Mastering it gives you a template for a whole family of similar problems. "
+            "⚠️ AI offline — showing cached insights. Refresh to get personalized analysis."
+        ),
+        "realWorldConnection": (
+            f"The {pattern} technique used in '{title}' appears directly in production systems "
+            "that need to compute or search efficiently at scale."
         ),
         "whereUsed": [
-            "Google Search: uses this pattern for query index traversal at scale",
-            "Amazon: applies it in recommendation engine filtering pipelines",
-            "Netflix: uses it for real-time content ranking across regions",
+            f"Google: uses {pattern} in search index traversal and query optimization",
+            f"Amazon: applies it in recommendation filtering and inventory systems",
+            f"Netflix: uses it for real-time content ranking pipelines",
         ],
         "whyCompaniesAsk": (
-            "This pattern tests your ability to recognize structure in data and apply "
-            "an optimal algorithm — exactly what production engineers do daily."
+            f"'{title}' tests whether you can recognize the {pattern} structure, "
+            "handle edge cases correctly, and write clean optimal code under pressure."
         ),
         "companies": ["Google", "Amazon", "Microsoft", "Meta", "Apple"],
-        "analogy": "⚠️ AI temporarily unavailable — try refreshing in 30 seconds.",
+        "analogy": f"⚠️ AI temporarily unavailable. Refresh in 30 seconds for a personalized analogy for '{title}'.",
     }

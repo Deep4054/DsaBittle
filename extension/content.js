@@ -261,13 +261,12 @@
 
     const diffClass = (insights.difficulty || data.difficulty || 'unknown').toLowerCase();
 
-    // Support both new fields (whySolveThis/whereUsed/whyCompaniesAsk)
-    // and old fields (whyMatters/useCases) for backwards compatibility with fallback
-    const whySolve    = insights.whySolveThis  || insights.whyMatters  || '';
-    const whereUsed   = insights.whereUsed     || insights.useCases    || [];
-    const whyAsk      = insights.whyCompaniesAsk || '';
-    const companies   = insights.companies     || [];
-    const analogy     = insights.analogy       || '';
+    const whySolve   = insights.whySolveThis || insights.whyMatters || '';
+    const realWorld  = insights.realWorldConnection || '';
+    const whereUsed  = insights.whereUsed || insights.useCases || [];
+    const whyAsk     = insights.whyCompaniesAsk || '';
+    const companies  = insights.companies || [];
+    const analogy    = insights.analogy || '';
 
     body.innerHTML = `
       <div class="ddp-problem-meta">
@@ -277,6 +276,15 @@
           ${insights.pattern || 'General'}
         </span>
       </div>
+
+      ${realWorld ? `
+      <div class="ddp-section ddp-realworld-box">
+        <div class="ddp-section-title">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          Real-World Connection
+        </div>
+        <p class="ddp-realworld-text">${realWorld}</p>
+      </div>` : ''}
 
       <div class="ddp-section">
         <div class="ddp-section-title">
@@ -288,8 +296,8 @@
 
       <div class="ddp-section">
         <div class="ddp-section-title">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          Where Companies Use It
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          Used In Production
         </div>
         <ul class="ddp-list">${whereUsed.map(u => `<li>${u}</li>`).join('')}</ul>
       </div>
