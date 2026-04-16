@@ -287,7 +287,7 @@
     const footer = document.getElementById('ddp-footer');
     if (!body) return;
 
-    // Direct field access — no over-processing
+    // Direct field access
     const realWorld    = insights.realWorldStory || insights.realWorldConnection || insights.problemSolves || '';
     const whyHurts     = insights.whyItHurts || '';
     const whySolve     = insights.whySolveIt || insights.whySolveThis || insights.whyMatters || insights.whyThisProblemMatters || '';
@@ -303,44 +303,47 @@
       ? rawCo.filter(c => c && c.length > 1 && c.length < 40)
       : [];
 
-    // Combine into 3 bento sections
-    const sec1 = realWorld;
-    const sec2 = [whyHurts, casualText, whySolve].filter(Boolean).join(' ');
-    const sec3Extra = [companiesCtx, costWrong, skillGain].filter(Boolean).join(' ');
+    // Build summary — first sentence of realWorld or whySolve
+    const summaryText = realWorld || whySolve || casualText || '';
+    const summary = summaryText.split(/\.\s+/)[0].replace(/\.$/, '').trim();
+
+    // Chat messages — only show if content exists
+    const msgs = [
+      { label: 'Real World', icon: '🌍', text: realWorld },
+      { label: 'What Actually Breaks', icon: '⚠️', text: whyHurts },
+      { label: 'Where You See This', icon: '👀', text: casualText || whySolve },
+      { label: 'Who Deals With This', icon: '🏢', text: companiesCtx, chips: companies },
+      { label: 'Cost of Getting Wrong', icon: '💸', text: costWrong },
+      { label: 'Skill You Gain', icon: '🎯', text: skillGain },
+    ].filter(m => m.text || (m.chips && m.chips.length));
 
     let html = `<div class="ddp-problem-meta">
       <span class="ddp-diff-badge ddp-diff-${diffClass}">${insights.difficulty || data.difficulty || 'Unknown'}</span>
       <span class="ddp-pattern-badge">${pattern}</span>
     </div>`;
 
-    if (sec1) {
-      const headline = sec1.split(/\.\s+/)[0].replace(/\.$/, '').trim();
-      html += `<div class="ddp-sec-1">
-        <span class="ddp-sec-label">Where This Actually Hits</span>
-        <div class="ddp-sec-headline">${headline}</div>
-        <p class="ddp-sec-body">${sec1}</p>
+    // Summary card
+    if (summary) {
+      html += `<div class="ddp-summary-card">
+        <div class="ddp-summary-label">TL;DR</div>
+        <p class="ddp-summary-text">${summary}.</p>
       </div>`;
     }
 
-    if (sec2) {
-      html += `<div class="ddp-sec-2">
-        <span class="ddp-sec-label">What Breaks Without It</span>
-        <p class="ddp-sec-body">${sec2}</p>
+    // Chat bubbles
+    msgs.forEach(m => {
+      html += `<div class="ddp-chat-msg">
+        <div class="ddp-chat-label">${m.icon} ${m.label}</div>
+        ${m.text ? `<p class="ddp-chat-text">${m.text}</p>` : ''}
+        ${m.chips && m.chips.length ? `<div class="ddp-chat-chips">${m.chips.map(c => `<span class="ddp-chip">${c}</span>`).join('')}</div>` : ''}
       </div>`;
-    }
+    });
 
-    if (companies.length || sec3Extra) {
-      html += `<div class="ddp-sec-3">
-        <span class="ddp-sec-label">Who Runs Into This</span>
-        ${sec3Extra ? `<p class="ddp-sec-body" style="margin-bottom:10px">${sec3Extra}</p>` : ''}
-        ${companies.length ? `<div class="ddp-chips">${companies.map(c => `<span class="ddp-chip">${c}</span>`).join('')}</div>` : ''}
-      </div>`;
-    }
-
-    if (!html.includes('ddp-sec-')) {
-      html += `<div class="ddp-ai-error">
+    if (!summary && !msgs.length) {
+      html += `<div class="ddp-error-box">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        AI returned empty response — retry in a moment.
+        <p>AI returned empty — retry in a moment.</p>
+        <small>Backend may be cold-starting</small>
       </div>`;
     }
 
