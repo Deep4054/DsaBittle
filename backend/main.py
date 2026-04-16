@@ -36,6 +36,53 @@ async def global_error_handler(request, exc: Exception):
 # ROUTES
 # ─────────────────────────────────────────────
 
+async def root(request):
+    """Root status page — shown when visiting the Railway URL directly."""
+    from starlette.responses import HTMLResponse
+    html = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>DSA Dopamine Engine — API</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',system-ui,sans-serif;background:#080810;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center}
+    .card{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:40px 48px;max-width:480px;width:90%;text-align:center;backdrop-filter:blur(20px)}
+    .logo{font-size:40px;margin-bottom:16px}
+    h1{font-size:22px;font-weight:800;margin-bottom:6px;letter-spacing:-0.5px}
+    .sub{font-size:13px;color:rgba(255,255,255,0.45);margin-bottom:28px}
+    .badge{display:inline-flex;align-items:center;gap:7px;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);color:#4ade80;font-size:12px;font-weight:700;padding:6px 16px;border-radius:30px;margin-bottom:28px}
+    .dot{width:7px;height:7px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(74,222,128,0.4)}50%{box-shadow:0 0 0 5px rgba(74,222,128,0)}}
+    .endpoints{text-align:left;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px 20px;font-size:12px}
+    .ep{display:flex;align-items:center;gap:10px;padding:5px 0;color:rgba(255,255,255,0.7)}
+    .ep:not(:last-child){border-bottom:1px solid rgba(255,255,255,0.05)}
+    .method{background:rgba(96,165,250,0.15);color:#60a5fa;border:1px solid rgba(96,165,250,0.25);font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;font-family:monospace}
+    .method.get{background:rgba(74,222,128,0.12);color:#4ade80;border-color:rgba(74,222,128,0.25)}
+    .path{font-family:monospace;font-size:11px;color:rgba(255,255,255,0.85)}
+    .model{margin-top:20px;font-size:11px;color:rgba(255,255,255,0.3)}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">🧠</div>
+    <h1>DSA Dopamine Engine</h1>
+    <div class="sub">AI-Powered Coaching API · Powered by NVIDIA NIM</div>
+    <div class="badge"><span class="dot"></span> Online &amp; Healthy</div>
+    <div class="endpoints">
+      <div class="ep"><span class="method get">GET</span><span class="path">/health</span></div>
+      <div class="ep"><span class="method">POST</span><span class="path">/analyze-problem</span></div>
+      <div class="ep"><span class="method">POST</span><span class="path">/deeper-explanation</span></div>
+      <div class="ep"><span class="method">POST</span><span class="path">/daily-report</span></div>
+    </div>
+    <div class="model">Model: meta/llama-3.3-70b-instruct</div>
+  </div>
+</body>
+</html>"""
+    return HTMLResponse(html)
+
+
 async def health(request):
     """Health check — used by Railway and monitoring."""
     api_key_set = bool(os.getenv("NVIDIA_NIM_API_KEY"))
@@ -95,10 +142,11 @@ async def daily_report_endpoint(request):
 app = Starlette(
     debug=True,
     routes=[
-        Route("/health", health, methods=["GET"]),
-        Route("/analyze-problem", analyze_endpoint, methods=["POST", "OPTIONS"]),
-        Route("/deeper-explanation", deeper_endpoint, methods=["POST", "OPTIONS"]),
-        Route("/daily-report", daily_report_endpoint, methods=["POST", "OPTIONS"]),
+        Route("/",               root,                    methods=["GET"]),
+        Route("/health",         health,                  methods=["GET"]),
+        Route("/analyze-problem",     analyze_endpoint,    methods=["POST", "OPTIONS"]),
+        Route("/deeper-explanation",  deeper_endpoint,     methods=["POST", "OPTIONS"]),
+        Route("/daily-report",        daily_report_endpoint, methods=["POST", "OPTIONS"]),
     ],
     middleware=[
         Middleware(
