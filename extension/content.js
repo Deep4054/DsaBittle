@@ -287,92 +287,61 @@
     const footer = document.getElementById('ddp-footer');
     if (!body) return;
 
-    // ── Helpers ──
-    const cleanText = (t) => (t || '')
-      .replace(/'[^']{2,40}'/g, 'this problem')
-      .replace(/"[^"]{2,40}"/g, 'this problem')
-      .replace(/\s{2,}/g, ' ').trim();
+    // Direct field access — no over-processing
+    const realWorld    = insights.realWorldStory || insights.realWorldConnection || insights.problemSolves || '';
+    const whyHurts     = insights.whyItHurts || '';
+    const whySolve     = insights.whySolveIt || insights.whySolveThis || insights.whyMatters || insights.whyThisProblemMatters || '';
+    const casualText   = insights.casualUseCase || (insights.casualUseCases || []).join(' ') || '';
+    const companiesCtx = insights.companiesContext || insights.productionReality || insights.whyCompaniesAsk || '';
+    const costWrong    = insights.costOfGettingWrong || '';
+    const skillGain    = insights.skillYouGain || '';
+    const pattern      = insights.pattern || data.difficulty || 'General';
+    const diffClass    = (insights.difficulty || data.difficulty || 'unknown').toLowerCase();
 
-    const dedup = (t) => {
-      if (!t) return '';
-      const lines = t.split(/\n/).map(l => l.trim()).filter(Boolean);
-      const joined = [...new Set(lines)].join(' ');
-      const seen = new Set();
-      return joined.split(/\.\s+/).filter(s => {
-        const k = s.toLowerCase().replace(/\s+/g, ' ').slice(0, 55);
-        if (seen.has(k)) return false;
-        seen.add(k); return true;
-      }).join('. ').replace(/\.{2,}/g, '.').trim();
-    };
-
-    const clean = (f) => dedup(cleanText(f || ''));
-
-    // ── Extract fields — new schema first, old names as fallback ──
-    const realWorld  = clean(insights.realWorldStory || insights.realWorldConnection || insights.problemSolves || '');
-    const whyHurts   = clean(insights.whyItHurts || '');
-    const whySolve   = clean(insights.whySolveIt || insights.whySolveThis || insights.whyMatters || '');
-
-    // casualUseCase is now a string; casualUseCases (old) was an array
-    const casualRaw  = insights.casualUseCase || '';
-    const casualArr  = insights.casualUseCases || [];
-    const casualText = clean(casualRaw) || casualArr.map(c => cleanText(c)).filter(Boolean).join(' ') || '';
-
-    const companiesCtx = clean(insights.companiesContext || insights.productionReality || insights.whyCompaniesAsk || '');
-    const costWrong    = clean(insights.costOfGettingWrong || '');
-    const skillGain    = clean(insights.skillYouGain || '');
-
-    // Normalize companies (string or array)
     const rawCo = insights.companies;
     const companies = Array.isArray(rawCo)
-      ? rawCo.map(c => cleanText(c)).filter(c => c.length > 1 && c.length < 35)
-      : typeof rawCo === 'string'
-        ? rawCo.split(/[:,;]/).map(c => c.replace(/any company[^,]*/i,'').trim()).filter(c => c.length > 1 && c.length < 35)
-        : [];
+      ? rawCo.filter(c => c && c.length > 1 && c.length < 40)
+      : [];
 
-    // ── Section 1 (amber): Real-world story ──
-    const sec1Text = realWorld;
-    const sec1Head = sec1Text.split(/\.\s+/)[0].replace(/\.$/,'').trim();
+    // Combine into 3 bento sections
+    const sec1 = realWorld;
+    const sec2 = [whyHurts, casualText, whySolve].filter(Boolean).join(' ');
+    const sec3Extra = [companiesCtx, costWrong, skillGain].filter(Boolean).join(' ');
 
-    // ── Section 2 (sage): Why it hurts + casual + why solve ──
-    const sec2Parts = [whyHurts, casualText, whySolve].filter(Boolean);
-    const sec2Text  = sec2Parts.join(' ').trim();
+    let html = `<div class="ddp-problem-meta">
+      <span class="ddp-diff-badge ddp-diff-${diffClass}">${insights.difficulty || data.difficulty || 'Unknown'}</span>
+      <span class="ddp-pattern-badge">${pattern}</span>
+    </div>`;
 
-    // ── Section 3 (lavender): Companies context + chips ──
-    const sec3Extra = companiesCtx;
-
-    let html = '';
-
-    // SECTION 1
-    if (sec1Text) {
-      html += `
-        <div class="ddp-sec-1">
-          <span class="ddp-sec-label">Where This Actually Hits</span>
-          <div class="ddp-sec-headline">${sec1Head}</div>
-          <p class="ddp-sec-body">${sec1Text}</p>
-        </div>`;
+    if (sec1) {
+      const headline = sec1.split(/\.\s+/)[0].replace(/\.$/, '').trim();
+      html += `<div class="ddp-sec-1">
+        <span class="ddp-sec-label">Where This Actually Hits</span>
+        <div class="ddp-sec-headline">${headline}</div>
+        <p class="ddp-sec-body">${sec1}</p>
+      </div>`;
     }
 
-    // SECTION 2
-    if (sec2Text) {
-      html += `
-        <div class="ddp-sec-2">
-          <span class="ddp-sec-label">What Breaks Without It</span>
-          <p class="ddp-sec-body">${sec2Text}</p>
-        </div>`;
+    if (sec2) {
+      html += `<div class="ddp-sec-2">
+        <span class="ddp-sec-label">What Breaks Without It</span>
+        <p class="ddp-sec-body">${sec2}</p>
+      </div>`;
     }
 
-    // SECTION 3
     if (companies.length || sec3Extra) {
-      html += `
-        <div class="ddp-sec-3">
-          <span class="ddp-sec-label">Who Runs Into This</span>
-          ${sec3Extra ? `<p class="ddp-sec-body" style="margin-bottom:10px">${sec3Extra}</p>` : ''}
-          ${companies.length ? `<div class="ddp-chips">${companies.map(c => `<span class="ddp-chip">${c}</span>`).join('')}</div>` : ''}
-        </div>`;
+      html += `<div class="ddp-sec-3">
+        <span class="ddp-sec-label">Who Runs Into This</span>
+        ${sec3Extra ? `<p class="ddp-sec-body" style="margin-bottom:10px">${sec3Extra}</p>` : ''}
+        ${companies.length ? `<div class="ddp-chips">${companies.map(c => `<span class="ddp-chip">${c}</span>`).join('')}</div>` : ''}
+      </div>`;
     }
 
-    if (!html) {
-      html = `<div class="ddp-ai-error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>AI is not working from backend</div>`;
+    if (!html.includes('ddp-sec-')) {
+      html += `<div class="ddp-ai-error">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        AI returned empty response — retry in a moment.
+      </div>`;
     }
 
     body.innerHTML = html;
