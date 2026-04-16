@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 from models import ProblemInput
 
 load_dotenv()
-
 logger = logging.getLogger("dsa-engine")
 
 _client: AsyncOpenAI | None = None
@@ -24,120 +23,104 @@ def _get_client() -> AsyncOpenAI:
         )
     return _client
 
-FAST_MODEL  = "meta/llama-3.1-8b-instruct"    # lighter — deeper + daily
-POWER_MODEL = "meta/llama-3.3-70b-instruct"   # heavy  — core analysis
+FAST_MODEL  = "meta/llama-3.1-8b-instruct"
+POWER_MODEL = "meta/llama-3.3-70b-instruct"
 
 
 # ─────────────────────────────────────────────
-# PROMPTS — PRODUCTION-FOCUSED, PROBLEM-SPECIFIC
+# MAIN PROMPT — ChatGPT casual, honest, no template
 # ─────────────────────────────────────────────
 
-ANALYZE_PROMPT = """
-You are a senior engineer who has worked at Google, Uber, Stripe, and startups.
-Your vibe: dev talking to dev — casual, direct, specific. No textbook, no email-template tone.
+ANALYZE_PROMPT = """You are a developer answering a friend's question: "why would I actually need to solve this problem in real life?"
 
 Problem: "{title}"
-Difficulty: {difficulty}
 Tags: {tags}
 Description: {description}
 
-STEP 1 — Classify the problem type (internal, don't output this):
-- DSA / algorithm / data structure → talk about algorithmic constraints, performance at scale
-- Data manipulation (pandas, SQL, ETL, schema) → talk about pipelines, schema mismatches, downstream breakage
-- Math / logic / basic utility → keep it grounded, don't force production drama
-- String / regex / parsing → talk about text processing pipelines, log parsing, config validation
-
-Do NOT force scale/latency/SLA if it doesn't naturally apply.
-A pandas column rename is NOT a performance bottleneck — it's a schema consistency problem.
-Not every problem is a production incident waiting to happen. Be honest.
-
-STEP 2 — Write the JSON output matching the actual problem type:
+Answer like you're chatting — casual, honest, specific. Think about what this problem is ACTUALLY about:
+- Is it about renaming/mapping data? Talk about schema mismatches, broken dashboards, API contracts.
+- Is it about searching efficiently? Talk about where search actually matters.
+- Is it about counting/grouping? Talk about analytics, reporting, aggregation.
+- Is it a simple utility? Keep it simple. Don't invent drama.
 
 RULES:
-1. Be specific. Don't say 'used in many applications.' Say WHICH app, WHICH feature, WHICH moment.
-2. Short and dense. Every sentence earns its place.
-3. Casual register: 'you', 'your', 'basically', 'look', 'honestly'.
-4. If a field has nothing useful, return empty string. No filler.
+- Do NOT mention 1M inputs, SLA, latency unless it genuinely applies
+- Do NOT say "general computation" or "core problem solving" — that's filler
+- If the problem is simple, say so and explain the simple real use case
+- Be specific to THIS problem, not the category
+- Short answers are better than padded ones
+- Write like a human, not a template
 
-Return ONLY valid JSON (no markdown, no backticks, no preamble):
+Return ONLY valid JSON (no markdown, no backticks):
 {{
-  "pattern": "Sliding Window | Hash Map | Schema Transformation | BFS | etc — whatever fits",
+  "pattern": "Short specific name — e.g. Column Renaming, Hash Lookup, BFS Traversal",
   "difficulty": "{difficulty}",
-  "realWorldStory": "2-4 sentences. Where does this exact operation show up in a real system? Be specific to the problem type. For data problems: 'Imagine your backend sends column X but the dashboard expects column Y — silently breaks.' For algo problems: 'Every time you type in Google Search, this runs.'",
-  "whyItHurts": "2-3 sentences. What actually breaks if you get this wrong? Match the problem type — for data: silent bugs, mismatched joins, broken dashboards. For algo: latency, memory, timeouts. Don't force scale drama on simple problems.",
-  "casualUseCase": "A flowing paragraph. 2-3 real scenarios that match THIS problem type. Data problems → mention ETL, pipelines, APIs. Algo problems → mention apps, scale, real features.",
-  "whySolveIt": "1-2 sentences. Honest reason this exists in interviews and codebases.",
-  "companiesContext": "1-2 sentences about which teams actually hit this. Match the problem type.",
-  "companies": ["Real company names — e.g. Google, Stripe, Airbnb, Meta"],
-  "costOfGettingWrong": "One sentence. The real consequence — match the problem (data bugs, perf issues, etc).",
-  "skillYouGain": "One sentence. What can you now build or debug that you couldn't before."
+  "realWorldStory": "2-3 casual sentences. Where does this exact thing show up? Be specific to the problem.",
+  "whyItHurts": "1-2 sentences. What actually breaks if you get this wrong? Match the problem — data bugs for data problems, perf for algo problems.",
+  "casualUseCase": "2-3 sentences. Real scenarios, grounded. No fake scale drama.",
+  "whySolveIt": "1 sentence. Honest reason.",
+  "companiesContext": "1 sentence. Which teams deal with this.",
+  "companies": ["4-5 real company names"],
+  "costOfGettingWrong": "1 short sentence.",
+  "skillYouGain": "1 short sentence."
 }}"""
 
 
-DEEPER_PROMPT = """
-Same vibe — senior dev, casual, real. No textbook explanations.
+DEEPER_PROMPT = """Same vibe — casual dev explaining to another dev.
 
 Problem: "{title}"
 Pattern: {pattern}
 
 Return ONLY valid JSON (no markdown, no backticks):
 {{
-  "timeComplexity": "Just the Big-O with one casual line why. Example: 'O(n) — one pass, that's it.'",
-  "spaceComplexity": "Big-O with one line on why space matters here specifically.",
-  "systemDesignConnection": "2-3 casual sentences. Where exactly does this show up in system design. Specific. Example: 'This is literally how Redis implements its hash table. When you cache a session token, this lookup is happening under the hood.'",
+  "timeComplexity": "Big-O with one casual line why.",
+  "spaceComplexity": "Big-O with one line on why space matters here.",
+  "systemDesignConnection": "2-3 casual sentences. Where does this show up in real system design?",
   "edgeCases": [
-    "Write each as a sentence, not a label. Example: 'What if the array is empty — your code needs to not blow up here.'",
-    "Not just 'Single element' — say 'If there's only one element, you return immediately. Make sure you're not comparing an element with itself.'",
-    "A constraint-specific case that would break if someone misread the problem."
+    "Write as a sentence, not a label. What actually breaks.",
+    "Another real edge case for this specific problem.",
+    "A constraint-specific case."
   ],
-  "followUpProblems": ["Actual LeetCode problem names that extend this one", "Variant that shows up at prod scale"],
-  "mentalModel": "2-3 sentences. Core intuition like you're drawing on a whiteboard. Casual and visual. Example: 'Think of it like a door with a lock. Every number is a lock. You carry the key for whatever you've seen before. When the right key shows up, door opens — done.'"
+  "followUpProblems": ["Actual LeetCode problem names that extend this"],
+  "mentalModel": "2-3 sentences. Core intuition, casual and visual."
 }}"""
 
 
-
-DAILY_REPORT_PROMPT = """You are a production-focused DSA coach analyzing a developer's actual practice data.
-Be specific, data-driven, and brutally honest about what their trajectory means for real systems.
+DAILY_REPORT_PROMPT = """You are a practical DSA coach. Be honest and data-driven.
 
 Student Stats:
 {stats}
 
-Recent Problems Solved (last {count}):
+Recent Problems (last {count}):
 {recent_history}
 
 Return ONLY valid JSON:
 {{
-  "overallAssessment": "2-3 sentences: referencing their ACTUAL numbers (total, streak, difficulty split). What does this trajectory say about their production-readiness?",
-  "strongTopics": ["Most-solved topic", "Second strongest", "Third if applicable"],
-  "weakTopics": ["Topic with fewest solves or slowest time", "Second weakest", "Third if applicable"],
-  "productionRelevance": "Which of their strong/weak topics actually matter in real systems? (Some topics are common in interviews but rare in prod)",
-  "bottleneck": "If they were on your team TODAY, what ACTUAL class of problems would slow them down on production systems?",
-  "nextTarget": "Specific problem type or category to focus on NEXT and why (not just 'do medium problems')",
-  "trainingGap": "The unsexy gap between their practice and what prod systems actually require (e.g., 'you practice isolated problems, prod = integration')",
-  "motivationalMessage": "Specific reference to their data that shows progress or potential",
+  "overallAssessment": "2-3 sentences referencing their actual numbers.",
+  "strongTopics": ["Most-solved topic", "Second", "Third if applicable"],
+  "weakTopics": ["Least practiced", "Second weakest", "Third if applicable"],
+  "insight": "One specific data-driven observation about their practice pattern.",
+  "recommendation": "Specific next step — what to practice and why.",
+  "motivationalMessage": "Short, genuine, references something specific from their data.",
   "predictedLevel": "Beginner / Apprentice / Intermediate / Advanced / Expert"
 }}"""
 
 
 # ─────────────────────────────────────────────
-# JSON PARSER — fixed regex
+# JSON PARSER
 # ─────────────────────────────────────────────
 
 def parse_json_response(raw: str) -> dict:
     raw = raw.strip()
-
-    # Strip markdown code fences if present
     cleaned = re.sub(r"^```(?:json)?\s*", "", raw, flags=re.MULTILINE)
     cleaned = re.sub(r"\s*```\s*$", "", cleaned, flags=re.MULTILINE)
     cleaned = cleaned.strip()
 
-    # Try direct parse
     try:
         return json.loads(cleaned)
     except json.JSONDecodeError:
         pass
 
-    # Find first {...} block
     match = re.search(r"\{[\s\S]*\}", cleaned)
     if match:
         try:
@@ -153,8 +136,8 @@ def parse_json_response(raw: str) -> dict:
 # ─────────────────────────────────────────────
 
 async def analyze_problem(data: ProblemInput) -> dict:
-    tags_str = ", ".join(data.tags) if data.tags else "not provided"
-    desc_str = (data.description or "")[:500]
+    tags_str = ", ".join(data.tags) if data.tags else "none"
+    desc_str = (data.description or "")[:600]
 
     prompt = ANALYZE_PROMPT.format(
         title=data.title,
@@ -169,12 +152,12 @@ async def analyze_problem(data: ProblemInput) -> dict:
             messages=[
                 {
                     "role": "system",
-                    "content": "Respond with valid JSON only. No markdown, no backticks, no preamble.",
+                    "content": "You are a developer answering casually. Respond with valid JSON only. No markdown, no backticks.",
                 },
                 {"role": "user", "content": prompt},
             ],
-            temperature=0.85,
-            max_tokens=1400,
+            temperature=0.8,
+            max_tokens=900,
         )
         raw = response.choices[0].message.content.strip()
         return parse_json_response(raw)
@@ -193,12 +176,12 @@ async def get_deeper_explanation(title: str, pattern: str) -> dict:
             messages=[
                 {
                     "role": "system",
-                    "content": "Respond with valid JSON only. No markdown, no backticks, no preamble.",
+                    "content": "Respond with valid JSON only. No markdown, no backticks.",
                 },
                 {"role": "user", "content": prompt},
             ],
             temperature=0.7,
-            max_tokens=900,
+            max_tokens=800,
         )
         raw = response.choices[0].message.content.strip()
         return parse_json_response(raw)
@@ -206,15 +189,12 @@ async def get_deeper_explanation(title: str, pattern: str) -> dict:
     except Exception as e:
         logger.warning(f"get_deeper_explanation failed ({type(e).__name__}: {e}) — returning fallback")
         return {
-            "timeComplexity": "Analysis unavailable — try again",
-            "spaceComplexity": "Analysis unavailable — try again",
-            "systemDesignConnection": "AI analysis temporarily unavailable. Refresh to retry.",
-            "scalingPoint": "100K+ scale usually exposes this problem",
+            "timeComplexity": "Unavailable — try again",
+            "spaceComplexity": "Unavailable — try again",
+            "systemDesignConnection": "AI temporarily unavailable. Refresh to retry.",
             "edgeCases": ["Empty input", "Single element", "Maximum constraint value"],
-            "debuggingSignal": "Monitor latency dashboards and memory usage patterns",
-            "followUpProblems": ["Distributed variant of this problem", "Caching layer needed variant"],
-            "mentalModel": "Identify the core constraint, work backward from the output, then find the efficient path",
-            "productionTrap": "Assuming local optimization works at scale without testing under real load"
+            "followUpProblems": ["Related problem on LeetCode"],
+            "mentalModel": "Break the problem into its core constraint, then find the most direct path."
         }
 
 
@@ -240,7 +220,6 @@ async def generate_daily_report(history: list, stats: dict) -> dict:
             "difficulty": item.get("difficulty"),
             "tags": item.get("tags", [])[:3],
             "timeSpentMinutes": round(item.get("timeSpent", 0) / 60, 1),
-            "pattern": item.get("pattern", ""),
         }
         for item in recent
     ]
@@ -257,12 +236,12 @@ async def generate_daily_report(history: list, stats: dict) -> dict:
             messages=[
                 {
                     "role": "system",
-                    "content": "Respond with valid JSON only. No markdown, no backticks, no preamble.",
+                    "content": "Respond with valid JSON only. No markdown, no backticks.",
                 },
                 {"role": "user", "content": prompt},
             ],
             temperature=0.6,
-            max_tokens=800,
+            max_tokens=700,
         )
         raw = response.choices[0].message.content.strip()
         return parse_json_response(raw)
@@ -272,14 +251,12 @@ async def generate_daily_report(history: list, stats: dict) -> dict:
         total = stats_summary["totalSolved"]
         streak = stats_summary["streak"]
         return {
-            "overallAssessment": f"You've solved {total} problems with a {streak}-day streak. Consistency matters more than speed.",
-            "strongTopics": ["Most frequently solved pattern", "Second strongest", "Third if present"],
-            "weakTopics": ["Least practiced", "Second weakest", "Opportunity area"],
-            "productionRelevance": "Some patterns you practice are interview favorites but less common in prod. Focus on high-impact ones.",
-            "bottleneck": "Identify where you slow down most: is it pattern recognition, implementation, or testing?",
-            "nextTarget": "Mix hard problems with pattern variants to build depth, not just breadth.",
-            "trainingGap": "You're solving isolated problems — next: think about how these combine in real systems.",
-            "motivationalMessage": f"Your {streak}-day streak shows discipline. Keep building on that foundation.",
+            "overallAssessment": f"You've solved {total} problems with a {streak}-day streak. Keep going.",
+            "strongTopics": ["Array", "String", "Hash Map"],
+            "weakTopics": ["Dynamic Programming", "Graph", "Tree"],
+            "insight": "Consistency beats intensity — your streak shows you're building the habit.",
+            "recommendation": "Try one medium problem per day in your weakest topic.",
+            "motivationalMessage": f"{streak} day streak — that's real discipline.",
             "predictedLevel": stats_summary.get("level", "Beginner"),
         }
 
@@ -299,127 +276,69 @@ def _get_slowest_tags(tag_stats: dict, n: int = 3) -> list:
         key=lambda x: x[1].get("avgTime", 0),
         reverse=True,
     )
-    return [
-        {"tag": k, "avgTimeMinutes": round(v.get("avgTime", 0) / 60, 1)}
-        for k, v in sorted_tags[:n]
-    ]
+    return [{"tag": k, "avgTimeMinutes": round(v.get("avgTime", 0) / 60, 1)} for k, v in sorted_tags[:n]]
 
 
 def _fallback_analysis(data: ProblemInput) -> dict:
-    """
-    Fallback analysis when AI is unavailable.
-    Still generates problem-specific insights where possible.
-    """
+    """Smart fallback — problem-type aware, no generic filler."""
     title = data.title or "this problem"
     tags_lower = [t.lower() for t in (data.tags or [])]
 
-    # Map patterns to production contexts — data problems get pipeline context, algo gets scale context
-    pattern_context = {
-        "pandas": {
+    # Data/pandas problems
+    if any(t in tags_lower for t in ["pandas", "dataframe", "database", "sql"]):
+        return {
             "pattern": "Schema Transformation",
-            "production": "Data pipelines, ETL jobs, analytics dashboards",
-            "signal": "Mismatched column names breaking downstream joins or dashboards silently"
-        },
-        "dataframe": {
-            "pattern": "Schema Transformation",
-            "production": "Data pipelines, ETL jobs, analytics dashboards",
-            "signal": "Column name mismatches silently breaking reports and API contracts"
-        },
-        "database": {
-            "pattern": "Query Optimization",
-            "production": "Backend APIs, analytics queries, reporting systems",
-            "signal": "Slow queries degrading API response times under real data volume"
-        },
-        "sql": {
-            "pattern": "Query Optimization",
-            "production": "Reporting pipelines, admin dashboards, analytics backends",
-            "signal": "Full table scans making dashboards timeout under production data size"
-        },
-        "binary search": {
-            "pattern": "Search Space Pruning",
-            "production": "Finding thresholds at scale: pricing tiers, feature flags, system limits",
-            "signal": "Linear scan timing out on sorted datasets with 1M+ entries"
-        },
-        "two pointers": {
-            "pattern": "Multi-Index Traversal",
-            "production": "Collision detection, deduplication, matching in data streams",
-            "signal": "O(n²) naive solution timing out on real data volumes"
-        },
-        "sliding window": {
-            "pattern": "Constraint-Based Window",
-            "production": "Rate limiting, time-series aggregation, buffer management",
-            "signal": "Memory spikes when processing continuous data streams naively"
-        },
-        "dynamic programming": {
-            "pattern": "State Memoization",
-            "production": "Cost optimization, resource allocation, caching decision trees",
-            "signal": "Exponential blowup in recursive solutions at 1K+ input size"
-        },
-        "hash table": {
-            "pattern": "O(1) Lookup",
-            "production": "Deduplication, session management, distributed cache validation",
-            "signal": "Lookup latency becoming bottleneck as data grows past memory constraints"
-        },
-        "graph": {
-            "pattern": "Relationship Traversal",
-            "production": "Recommendation systems, dependency resolution, network routing",
-            "signal": "BFS/DFS timeout when graph exceeds 10K nodes without pruning"
-        },
-        "tree": {
-            "pattern": "Hierarchical Search",
-            "production": "Autocomplete indices, permission hierarchies, geographic partitioning",
-            "signal": "Search latency scaling linearly instead of logarithmically with data size"
-        },
-        "stack": {
-            "pattern": "LIFO Processing",
-            "production": "Browser history, undo/redo, expression parsing in compilers",
-            "signal": "Recursive calls hitting stack overflow on deep or malicious inputs"
-        },
-        "linked list": {
-            "pattern": "Sequential Access",
-            "production": "Memory-efficient queuing, LRU cache, immutable data structures",
-            "signal": "Inefficient insertions causing GC pressure in high-throughput systems"
-        },
-        "string": {
-            "pattern": "Pattern Matching",
-            "production": "Log parsing, config validation, text search pipelines",
-            "signal": "String scanning becoming CPU bottleneck in high-volume log processing"
-        },
-        "sorting": {
-            "pattern": "Ordered Traversal",
-            "production": "Data normalization, leaderboards, ranked API responses",
-            "signal": "Incorrect sort order causing wrong results in ranked data — silent bug"
-        },
-        "array": {
-            "pattern": "Sequential Processing",
-            "production": "Batch processing, data transformation, ETL pipelines",
-            "signal": "Inefficient traversal causing timeout on large datasets"
-        },
-    }
+            "difficulty": data.difficulty or "Easy",
+            "realWorldStory": "This shows up when your backend and frontend don't agree on field names. One service sends 'first', another expects 'first_name'. Nothing crashes — your UI just shows empty data.",
+            "whyItHurts": "It's not a crash, it's silent wrong data. Those bugs take longer to find than any exception.",
+            "casualUseCase": "APIs, dashboards, ETL jobs — everywhere data moves between systems, naming mismatches cause issues. You rename once here, everything downstream works.",
+            "whySolveIt": "Because systems rely on consistent data contracts, and this is how you enforce them.",
+            "companiesContext": "Backend and data teams deal with this daily — especially when integrating third-party APIs.",
+            "companies": ["Google", "Stripe", "Airbnb", "Meta", "Shopify"],
+            "costOfGettingWrong": "Wrong column name = missing or incorrect data in your UI or reports.",
+            "skillYouGain": "You learn to think in data contracts, not just code.",
+        }
 
-    # Find matching context
-    pattern = "Core Problem Solving"
-    context = {
-        "pattern": pattern,
-        "production": "General computation",
-        "signal": "Performance degradation"
-    }
+    # Binary search
+    if "binary search" in tags_lower:
+        return {
+            "pattern": "Binary Search",
+            "difficulty": data.difficulty or "Medium",
+            "realWorldStory": "Every time you search for something in a sorted list — package tracking, version lookup, finding a threshold — binary search is running. It's the reason search feels instant.",
+            "whyItHurts": "Linear scan on a sorted list of 1M items takes forever. Binary search does it in 20 steps. That's the difference between a fast app and a timeout.",
+            "casualUseCase": "Git bisect uses this to find which commit broke your build. Database indexes use it to find rows. Even your phone's contact search uses it.",
+            "whySolveIt": "It's the most fundamental 'work smarter not harder' algorithm — shows up everywhere sorted data exists.",
+            "companiesContext": "Any team with large sorted datasets — search, databases, version control, pricing engines.",
+            "companies": ["Google", "Amazon", "Microsoft", "Uber", "Netflix"],
+            "costOfGettingWrong": "Off-by-one errors in binary search cause subtle bugs that only appear at boundaries.",
+            "skillYouGain": "You start seeing sorted data as an opportunity to skip work, not just iterate through it.",
+        }
 
-    for key, val in pattern_context.items():
-        if any(key in t for t in tags_lower):
-            context = val
-            pattern = val["pattern"]
-            break
+    # Hash table / two sum style
+    if any(t in tags_lower for t in ["hash table", "hash map"]):
+        return {
+            "pattern": "Hash Map Lookup",
+            "difficulty": data.difficulty or "Easy",
+            "realWorldStory": "This is the O(1) lookup pattern — it shows up in deduplication, session management, cache validation. When the naive O(n²) solution ships, lookup latency becomes a bottleneck and it becomes someone's on-call incident.",
+            "whyItHurts": "Works fine at 1K inputs. Push it to 100K and you'll see latency spikes. That's when it goes from a code review comment to a production incident.",
+            "casualUseCase": "Checking if a user already exists, finding duplicate transactions, looking up config values — all of these use hash maps under the hood.",
+            "whySolveIt": "Companies ask this to see if you know when brute force will kill you in prod.",
+            "companiesContext": "Any team running at scale — fintech, e-commerce, infra — has written a version of this.",
+            "companies": ["Google", "Uber", "Stripe", "Amazon", "Airbnb"],
+            "costOfGettingWrong": "Naive O(n²) solution hits a wall at 10K–100K inputs.",
+            "skillYouGain": "You'll spot O(1) lookup opportunities before they become bottlenecks.",
+        }
 
+    # Generic fallback — still honest
     return {
-        "pattern": pattern,
+        "pattern": "Core Algorithm",
         "difficulty": data.difficulty or "Unknown",
-        "realWorldStory": f"This is the {context['pattern'].lower()} pattern — and it shows up in {context['production'].lower()}. When the naive solution ships, {context['signal'].lower()} and it becomes someone's on-call incident.",
-        "whyItHurts": f"Works fine at 1K inputs. Push it to 100K or 1M and you'll see latency spikes, query timeouts, SLA misses. That's when it goes from a code review comment to a production incident.",
-        "casualUseCase": f"{context['production']}. This pattern is more common than people realize — anytime you're processing data at volume, this is either working for you or against you.",
-        "whySolveIt": "Companies ask this to see if you know when brute force will kill you in prod. That's a real engineering judgment call they're testing for.",
-        "companiesContext": "Any team running at scale has hit this. Fintech, e-commerce, infra — they've all written a version of this in some critical path.",
-        "companies": ["Google", "Uber", "Stripe", "Amazon", "Airbnb"],
-        "costOfGettingWrong": f"Naive solution hits a wall at 10K–100K inputs. In prod: latency SLA miss, customer churn, on-call pages.",
-        "skillYouGain": f"You'll spot {context['pattern'].lower()} bottlenecks before they become incidents.",
+        "realWorldStory": f"'{title}' is a building block that shows up in real systems more than you'd expect. The exact scenario depends on the context, but the pattern is reusable.",
+        "whyItHurts": "Getting the logic wrong here causes subtle bugs that are hard to trace back to the source.",
+        "casualUseCase": "This type of problem appears in data processing, API design, and system utilities — anywhere you need to transform or search through structured data.",
+        "whySolveIt": "It builds the intuition for recognizing similar patterns in production code.",
+        "companiesContext": "Engineering teams across the industry encounter variations of this regularly.",
+        "companies": ["Google", "Amazon", "Microsoft", "Meta", "Apple"],
+        "costOfGettingWrong": "Incorrect logic leads to wrong results that may not surface until production.",
+        "skillYouGain": "You build pattern recognition that transfers to real codebase problems.",
     }
