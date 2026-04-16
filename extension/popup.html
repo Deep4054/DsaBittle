@@ -4,144 +4,190 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DSA Dopamine Engine</title>
-  <link rel="stylesheet" href="styles.css" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    html, body { width: 360px; min-height: 500px; margin: 0; padding: 0; }
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="popup-glass.css" />
 </head>
-<body class="ddp-popup-body">
-<div class="popup-frosted-wrap">
+<body class="glass-popup-body">
 
-  <!-- HEADER -->
-  <div class="popup-header">
-    <div class="popup-logo-row">
-      <div class="popup-brand">
-        <div class="popup-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
-            <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
+  <!-- Ambient background orbs -->
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <!-- ── MAIN POPUP CONTAINER ── -->
+  <div class="glass-popup" id="glass-popup">
+
+    <!-- HEADER BAR -->
+    <div class="gp-header">
+      <div class="gp-brand">
+        <div class="gp-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
           </svg>
         </div>
-        <span class="popup-logo-text">DSA Engine</span>
-      </div>
-      <span class="popup-level-badge" id="popup-level">Beginner</span>
-    </div>
-    <div class="popup-subtitle" id="popup-subtitle">Loading your stats...</div>
-  </div>
-
-  <!-- Loading -->
-  <div id="popup-loading" class="popup-loading">
-    <div class="ddp-spinner ddp-spinner-sm"></div>
-    <span>Loading...</span>
-  </div>
-
-  <!-- Main content -->
-  <div id="popup-content" style="display:none">
-
-    <!-- STATS GRID -->
-    <div class="popup-stats-grid">
-      <div class="stat-card stat-solved">
-        <div class="stat-card-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <div class="gp-brand-text">
+          <span class="gp-title">DSA Engine</span>
+          <span class="gp-tagline">AI-Powered Coaching</span>
         </div>
-        <div class="stat-card-label">Total Solved</div>
-        <div class="stat-card-value" id="stat-total">0</div>
-        <div class="stat-card-sub">problems</div>
       </div>
-
-      <div class="stat-card stat-streak">
-        <div class="stat-card-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>
-        </div>
-        <div class="stat-card-label">Streak</div>
-        <div class="stat-card-value" id="stat-streak">0</div>
-        <div class="stat-card-sub">days</div>
-      </div>
-
-      <div class="stat-card stat-xp">
-        <div class="stat-card-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        </div>
-        <div class="stat-card-label">Total XP</div>
-        <div class="stat-card-value" id="stat-xp">0</div>
-        <div class="stat-card-sub">experience</div>
-      </div>
-
-      <div class="stat-card stat-today">
-        <div class="stat-card-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-        </div>
-        <div class="stat-card-label">Today</div>
-        <div class="stat-card-value" id="stat-today">0</div>
-        <div class="stat-card-sub">solved</div>
+      <div class="gp-header-right">
+        <span class="gp-level-pill" id="popup-level">Beginner</span>
+        <button class="gp-minimize-btn" id="gp-minimize" title="Minimize / Expand">
+          <svg id="minimize-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="18 15 12 9 6 15"/>
+          </svg>
+        </button>
       </div>
     </div>
 
-    <!-- XP BAR -->
-    <div class="popup-xp-bar-section">
-      <div class="xp-bar-label">
-        <span id="xp-bar-current-level">Beginner</span>
-        <span id="xp-bar-next-level">Apprentice (100 XP)</span>
-      </div>
-      <div class="xp-bar-bg">
-        <div class="xp-bar-fill" id="xp-bar-fill" style="width:0%"></div>
+    <!-- SUBTITLE -->
+    <div class="gp-subtitle-bar" id="gp-subtitle-bar">
+      <div class="gp-subtitle" id="popup-subtitle">Loading your progress...</div>
+      <div class="gp-status-dot" id="gp-status-dot">
+        <span class="status-pulse"></span>
+        <span class="status-text">Live</span>
       </div>
     </div>
 
-    <!-- DIFFICULTY BREAKDOWN -->
-    <div class="popup-diff-section">
-      <div class="popup-section-title">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        Difficulty Breakdown
+    <!-- COLLAPSIBLE BODY -->
+    <div class="gp-body" id="gp-body">
+
+      <!-- LOADING STATE -->
+      <div id="popup-loading" class="gp-loading">
+        <div class="gp-spinner"></div>
+        <span>Loading your stats…</span>
       </div>
-      <div class="diff-bars">
-        <div class="diff-row">
-          <span class="diff-label easy">Easy</span>
-          <div class="diff-bar-bg"><div class="diff-bar-fill easy" id="bar-easy" style="width:0%"></div></div>
-          <span class="diff-count" id="count-easy">0</span>
+
+      <!-- MAIN CONTENT -->
+      <div id="popup-content" style="display:none">
+
+        <!-- STATS GRID -->
+        <div class="gp-stats-grid">
+
+          <div class="gp-stat-card" data-accent="white">
+            <div class="gp-stat-top">
+              <div class="gp-stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <span class="gp-stat-label">Solved</span>
+            </div>
+            <div class="gp-stat-value" id="stat-total">0</div>
+            <div class="gp-stat-sub">total problems</div>
+          </div>
+
+          <div class="gp-stat-card" data-accent="orange">
+            <div class="gp-stat-top">
+              <div class="gp-stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>
+              </div>
+              <span class="gp-stat-label">Streak</span>
+            </div>
+            <div class="gp-stat-value" id="stat-streak">0</div>
+            <div class="gp-stat-sub">day streak</div>
+          </div>
+
+          <div class="gp-stat-card" data-accent="purple">
+            <div class="gp-stat-top">
+              <div class="gp-stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              </div>
+              <span class="gp-stat-label">XP</span>
+            </div>
+            <div class="gp-stat-value" id="stat-xp">0</div>
+            <div class="gp-stat-sub">experience pts</div>
+          </div>
+
+          <div class="gp-stat-card" data-accent="blue">
+            <div class="gp-stat-top">
+              <div class="gp-stat-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2"/></svg>
+              </div>
+              <span class="gp-stat-label">Today</span>
+            </div>
+            <div class="gp-stat-value" id="stat-today">0</div>
+            <div class="gp-stat-sub">solved today</div>
+          </div>
+
         </div>
-        <div class="diff-row">
-          <span class="diff-label medium">Med</span>
-          <div class="diff-bar-bg"><div class="diff-bar-fill medium" id="bar-medium" style="width:0%"></div></div>
-          <span class="diff-count" id="count-medium">0</span>
+
+        <!-- XP PROGRESS BAR -->
+        <div class="gp-section">
+          <div class="gp-section-head">
+            <span class="gp-section-title">Level Progress</span>
+            <div class="gp-xp-labels">
+              <span id="xp-bar-current-level">Beginner</span>
+              <span class="gp-arrow">→</span>
+              <span id="xp-bar-next-level">Apprentice</span>
+            </div>
+          </div>
+          <div class="gp-xp-track">
+            <div class="gp-xp-fill" id="xp-bar-fill" style="width:0%"></div>
+          </div>
         </div>
-        <div class="diff-row">
-          <span class="diff-label hard">Hard</span>
-          <div class="diff-bar-bg"><div class="diff-bar-fill hard" id="bar-hard" style="width:0%"></div></div>
-          <span class="diff-count" id="count-hard">0</span>
+
+        <!-- DIFFICULTY BREAKDOWN -->
+        <div class="gp-section">
+          <div class="gp-section-head">
+            <span class="gp-section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              Difficulty Split
+            </span>
+          </div>
+          <div class="gp-diff-rows">
+            <div class="gp-diff-row">
+              <span class="gp-diff-tag easy">Easy</span>
+              <div class="gp-diff-track"><div class="gp-diff-bar easy" id="bar-easy" style="width:0%"></div></div>
+              <span class="gp-diff-num" id="count-easy">0</span>
+            </div>
+            <div class="gp-diff-row">
+              <span class="gp-diff-tag medium">Med</span>
+              <div class="gp-diff-track"><div class="gp-diff-bar medium" id="bar-medium" style="width:0%"></div></div>
+              <span class="gp-diff-num" id="count-medium">0</span>
+            </div>
+            <div class="gp-diff-row">
+              <span class="gp-diff-tag hard">Hard</span>
+              <div class="gp-diff-track"><div class="gp-diff-bar hard" id="bar-hard" style="width:0%"></div></div>
+              <span class="gp-diff-num" id="count-hard">0</span>
+            </div>
+          </div>
         </div>
-      </div>
+
+        <!-- RECENT PROBLEMS -->
+        <div class="gp-section gp-section-last">
+          <div class="gp-section-head">
+            <span class="gp-section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Recent Problems
+            </span>
+          </div>
+          <div class="gp-history-list" id="popup-history-list"></div>
+        </div>
+
+      </div><!-- /popup-content -->
+
+    </div><!-- /gp-body -->
+
+    <!-- FOOTER ACTIONS -->
+    <div class="gp-footer">
+      <button class="gp-btn gp-btn-ghost" id="btn-leetcode">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        LeetCode
+      </button>
+      <button class="gp-btn gp-btn-ghost" id="btn-dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </button>
+      <button class="gp-btn gp-btn-primary" id="btn-report">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
+        AI Report
+      </button>
     </div>
 
-    <!-- RECENT PROBLEMS -->
-    <div class="popup-history-section">
-      <div class="popup-section-title">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        Recent Problems
-      </div>
-      <div class="popup-history-list" id="popup-history-list"></div>
-    </div>
-
-  </div><!-- /popup-content -->
-
-</div><!-- /frosted-wrap -->
-
-<!-- FOOTER -->
-<div class="popup-footer">
-  <button class="popup-footer-btn" id="btn-leetcode">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-    LeetCode
-  </button>
-  <button class="popup-footer-btn" id="btn-dashboard">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-    Dashboard
-  </button>
-  <button class="popup-footer-btn popup-footer-btn-primary" id="btn-report">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
-    AI Report
-  </button>
-</div>
+  </div><!-- /glass-popup -->
 
 <script src="popup.js"></script>
 </body>

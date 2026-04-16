@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DSA Dopamine Engine",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Track DSA progress with real-world AI insights, streak tracking, and personalized coaching.",
   "permissions": [
     "storage",
@@ -41,7 +41,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["styles.css", "icons/*", "dashboard.html", "dashboard.js"],
+      "resources": ["styles.css", "popup-glass.css", "icons/*", "dashboard.html", "dashboard.js"],
       "matches": ["https://leetcode.com/*", "https://www.hackerrank.com/*", "<all_urls>"]
     }
   ]
