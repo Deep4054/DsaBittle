@@ -287,59 +287,41 @@
     const footer = document.getElementById('ddp-footer');
     if (!body) return;
 
-    // Direct field access
-    const realWorld    = insights.realWorldStory || insights.realWorldConnection || insights.problemSolves || '';
-    const whyHurts     = insights.whyItHurts || '';
-    const whySolve     = insights.whySolveIt || insights.whySolveThis || insights.whyMatters || insights.whyThisProblemMatters || '';
-    const casualText   = insights.casualUseCase || (insights.casualUseCases || []).join(' ') || '';
-    const companiesCtx = insights.companiesContext || insights.productionReality || insights.whyCompaniesAsk || '';
-    const costWrong    = insights.costOfGettingWrong || '';
-    const skillGain    = insights.skillYouGain || '';
-    const pattern      = insights.pattern || data.difficulty || 'General';
-    const diffClass    = (insights.difficulty || data.difficulty || 'unknown').toLowerCase();
+    const diffClass = (insights.difficulty || data.difficulty || 'unknown').toLowerCase();
+    const pattern   = insights.pattern || '';
 
-    const rawCo = insights.companies;
-    const companies = Array.isArray(rawCo)
-      ? rawCo.filter(c => c && c.length > 1 && c.length < 40)
-      : [];
-
-    // Build summary — first sentence of realWorld or whySolve
-    const summaryText = realWorld || whySolve || casualText || '';
-    const summary = summaryText.split(/\.\s+/)[0].replace(/\.$/, '').trim();
-
-    // Chat messages — only show if content exists
-    const msgs = [
-      { label: 'Real World', icon: '🌍', text: realWorld },
-      { label: 'What Actually Breaks', icon: '⚠️', text: whyHurts },
-      { label: 'Where You See This', icon: '👀', text: casualText || whySolve },
-      { label: 'Who Deals With This', icon: '🏢', text: companiesCtx, chips: companies },
-      { label: 'Cost of Getting Wrong', icon: '💸', text: costWrong },
-      { label: 'Skill You Gain', icon: '🎯', text: skillGain },
-    ].filter(m => m.text || (m.chips && m.chips.length));
+    // New 3-field schema — with fallback to old fields
+    const whatIsThis = insights.whatIsThis || insights.realWorldStory || insights.problemSolves || '';
+    const realUse    = insights.realUse    || insights.casualUseCase  || insights.whySolveIt   || '';
+    const whatBreaks = insights.whatBreaks || insights.whyItHurts     || insights.costOfGettingWrong || '';
 
     let html = `<div class="ddp-problem-meta">
       <span class="ddp-diff-badge ddp-diff-${diffClass}">${insights.difficulty || data.difficulty || 'Unknown'}</span>
-      <span class="ddp-pattern-badge">${pattern}</span>
+      ${pattern ? `<span class="ddp-pattern-badge">${pattern}</span>` : ''}
     </div>`;
 
-    // Summary card
-    if (summary) {
-      html += `<div class="ddp-summary-card">
-        <div class="ddp-summary-label">TL;DR</div>
-        <p class="ddp-summary-text">${summary}.</p>
+    if (whatIsThis) {
+      html += `<div class="ddp-chat-msg">
+        <div class="ddp-chat-label">💡 This is</div>
+        <p class="ddp-chat-text">${whatIsThis}</p>
       </div>`;
     }
 
-    // Chat bubbles
-    msgs.forEach(m => {
+    if (realUse) {
       html += `<div class="ddp-chat-msg">
-        <div class="ddp-chat-label">${m.icon} ${m.label}</div>
-        ${m.text ? `<p class="ddp-chat-text">${m.text}</p>` : ''}
-        ${m.chips && m.chips.length ? `<div class="ddp-chat-chips">${m.chips.map(c => `<span class="ddp-chip">${c}</span>`).join('')}</div>` : ''}
+        <div class="ddp-chat-label">👀 Where you'll hit this</div>
+        <p class="ddp-chat-text">${realUse}</p>
       </div>`;
-    });
+    }
 
-    if (!summary && !msgs.length) {
+    if (whatBreaks) {
+      html += `<div class="ddp-chat-msg">
+        <div class="ddp-chat-label">⚠️ If you mess this up</div>
+        <p class="ddp-chat-text">${whatBreaks}</p>
+      </div>`;
+    }
+
+    if (!whatIsThis && !realUse && !whatBreaks) {
       html += `<div class="ddp-error-box">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <p>AI returned empty — retry in a moment.</p>
