@@ -110,8 +110,8 @@
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             --:--
           </div>
-          <button class="ddp-close" id="ddp-close-btn" title="Collapse">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <button class="ddp-close" id="ddp-close-btn" title="Minimize panel">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
           </button>
         </div>
       </div>
@@ -143,12 +143,10 @@
     makeDraggable(panel);
 
     document.getElementById('ddp-close-btn').addEventListener('click', () => {
-      const b = document.getElementById('ddp-body');
-      const f = document.getElementById('ddp-footer');
-      const isVisible = b && b.style.display !== 'none';
-      if (b) b.style.display = isVisible ? 'none' : 'block';
-      if (f && isVisible) { f.dataset.vis = f.style.display; f.style.display = 'none'; }
-      if (f && !isVisible) { f.style.display = f.dataset.vis || 'none'; }
+      const panel = document.getElementById('dsa-dopamine-panel');
+      const btn = document.getElementById('ddp-close-btn');
+      const isMin = panel.classList.toggle('ddp-minimized');
+      btn.querySelector('svg polyline').setAttribute('points', isMin ? '6 9 12 15 18 9' : '18 15 12 9 6 15');
     });
 
     // Timer — manual start/stop, NOT auto-start

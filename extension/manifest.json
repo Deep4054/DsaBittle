@@ -23,7 +23,8 @@
     {
       "matches": [
         "https://leetcode.com/problems/*",
-        "https://www.hackerrank.com/challenges/*"
+        "https://www.hackerrank.com/challenges/*",
+        "https://www.hackerrank.com/domains/*"
       ],
       "js": ["content.js"],
       "css": ["styles.css"],

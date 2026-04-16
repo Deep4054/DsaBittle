@@ -529,3 +529,12 @@
   pointer-events: none; max-width: 260px;
 }
 .ddp-toast-show { opacity: 1; transform: translateY(0); }
+
+#dsa-dopamine-panel.ddp-minimized .ddp-body,
+#dsa-dopamine-panel.ddp-minimized .ddp-footer {
+  display: none !important;
+}
+#dsa-dopamine-panel.ddp-minimized {
+  max-height: 52px;
+  overflow: hidden;
+}

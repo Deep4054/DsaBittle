@@ -33,7 +33,11 @@
 
     body {
       font-family: var(--font);
-      background: var(--bg);
+      background:
+        radial-gradient(ellipse at 15% 15%, rgba(139, 92, 20, 0.4) 0%, transparent 50%),
+        radial-gradient(ellipse at 85% 80%, rgba(100, 60, 160, 0.35) 0%, transparent 50%),
+        radial-gradient(ellipse at 60% 35%, rgba(30, 90, 160, 0.25) 0%, transparent 45%),
+        linear-gradient(135deg, #0d0a14 0%, #080e1a 50%, #0a0810 100%);
       color: var(--text);
       min-height: 100vh;
       overflow-x: hidden;
@@ -50,12 +54,12 @@
     .orb-1 {
       top: -120px; left: -120px;
       width: 520px; height: 520px;
-      background: radial-gradient(circle, rgba(108,99,255,0.2) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(139,92,20,0.25) 0%, transparent 70%);
     }
     .orb-2 {
       bottom: -150px; right: -150px;
       width: 600px; height: 600px;
-      background: radial-gradient(circle, rgba(59,130,246,0.14) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(100,60,160,0.2) 0%, transparent 70%);
     }
     .orb-3 {
       top: 40%; left: 50%;
