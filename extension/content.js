@@ -271,12 +271,13 @@
 
     const diffClass = (insights.difficulty || data.difficulty || 'unknown').toLowerCase();
 
-    const whySolve   = insights.whySolveThis || insights.whyMatters || '';
-    const realWorld  = insights.realWorldConnection || '';
-    const whereUsed  = insights.whereUsed || insights.useCases || [];
-    const whyAsk     = insights.whyCompaniesAsk || '';
-    const companies  = insights.companies || [];
-    const analogy    = insights.analogy || '';
+    const whySolve      = insights.whySolveThis || insights.whyMatters || '';
+    const realWorld     = insights.realWorldConnection || '';
+    const casualCases   = insights.casualUseCases || [];
+    const whereUsed     = insights.whereUsed || insights.useCases || [];
+    const whyAsk        = insights.whyCompaniesAsk || '';
+    const companies     = insights.companies || [];
+    const analogy       = insights.analogy || '';
 
     body.innerHTML = `
       <div class="ddp-problem-meta">
@@ -291,9 +292,18 @@
       <div class="ddp-section ddp-realworld-box">
         <div class="ddp-section-title">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          Real-World Connection
+          You've Already Used This
         </div>
         <p class="ddp-realworld-text">${realWorld}</p>
+      </div>` : ''}
+
+      ${casualCases.length ? `
+      <div class="ddp-section">
+        <div class="ddp-section-title">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          In Your Daily Life
+        </div>
+        <div class="ddp-casual-list">${casualCases.map(c => `<div class="ddp-casual-item">${c}</div>`).join('')}</div>
       </div>` : ''}
 
       <div class="ddp-section">

@@ -1,13 +1,14 @@
-# ai_engine.py — NVIDIA NIM AI Engine for DSA Dopamine Engine
-
 import os
 import json
 import re
+import logging
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 from models import ProblemInput
 
 load_dotenv()
+
+logger = logging.getLogger("dsa-engine")
 
 _client: AsyncOpenAI | None = None
 
@@ -28,75 +29,90 @@ POWER_MODEL = "meta/llama-3.3-70b-instruct"
 
 
 # ─────────────────────────────────────────────
-# PROMPTS — Problem-specific, not pattern-generic
+# PROMPTS — PRODUCTION-FOCUSED, PROBLEM-SPECIFIC
 # ─────────────────────────────────────────────
 
-ANALYZE_PROMPT = """You are a world-class software engineer and DSA coach.
-Your job is to make THIS SPECIFIC problem feel alive and meaningful — not give generic pattern advice.
+ANALYZE_PROMPT = """You are a production engineer (not a DSA tutor) explaining why solving THIS exact problem matters in real systems.
 
 Problem: "{title}"
 Difficulty: {difficulty}
 Tags: {tags}
 Description: {description}
 
-Think deeply about THIS problem specifically:
-- What is the EXACT real-world scenario where this problem's solution is used?
-- Not "binary search is used in databases" — but specifically what "{title}" computes and where THAT computation matters
-- Connect the actual algorithm to actual production code in actual products
+YOUR TASK: Find the actual, non-obvious reason a company NEEDS this computation solved.
+- NOT "this is used in sorting" or "this is a fundamental algorithm"
+- YES "when this system fails or is slow, it costs the company $X per minute" or "this constraint exists because of a real product requirement"
+- YES "I can point to the exact line of code or system decision that requires solving this"
 
-Return ONLY valid JSON (no markdown, no explanation):
+Think like a tech lead who got paged at 3am because THIS problem wasn't solved efficiently.
+
+Return ONLY valid JSON (no markdown):
 {{
-  "pattern": "Precise pattern name for this specific problem",
-  "whySolveThis": "2-3 sentences specific to '{title}' — what insight does solving THIS problem give you? What class of problems does it unlock? Be concrete, not generic.",
-  "realWorldConnection": "The single most direct real-world use of THIS problem's exact computation. Example for Sqrt(x): 'Every graphics engine uses integer square root to compute pixel distances in collision detection — Unity, Unreal, and game physics engines call this thousands of times per frame.' Be THIS specific.",
-  "whereUsed": [
-    "SPECIFIC PRODUCT: exactly how THIS problem's algorithm is used inside it — not the pattern, but this exact computation",
-    "SPECIFIC PRODUCT: another concrete use of this exact problem's solution in production",
-    "SPECIFIC PRODUCT: a third real use that would surprise most developers"
+  "pattern": "The core computational pattern '{title}' reduces to",
+  "problemSolves": "What actual business problem, system constraint, or user-facing issue does '{title}' solve? (Not 'it teaches you about trees')",
+  "productsNeedThis": [
+    {{
+      "product": "Actual product/company/service",
+      "whyTheNeed": "Concrete scenario: what constraint forces them to solve this, when does it run, what breaks if slow/wrong"
+    }},
+    {{
+      "product": "Another non-obvious real scenario",
+      "whyTheNeed": "Why does THEIR ACTUAL SYSTEM need this exact solution (not just 'they use algorithms')"
+    }},
+    {{
+      "product": "Third example (pick something common users interact with)",
+      "whyTheNeed": "Specific trigger: what user action causes this computation, why can't they avoid it"
+    }}
   ],
-  "whyCompaniesAsk": "2-3 sentences: what THIS specific problem reveals about a candidate — not generic 'tests fundamentals' but what thinking pattern, edge case awareness, or optimization insight it exposes.",
-  "companies": ["5 real companies known to ask problems exactly like this one"],
-  "analogy": "One vivid real-world analogy SPECIFIC to this problem's algorithm. Not a generic binary search analogy — make it about what '{title}' actually computes.",
+  "costOfGettingWrong": "Real consequences if this is solved inefficiently or incorrectly: latency impact, money lost, user experience breaking, scale limit hit",
+  "whyThisProblemMatters": "2-3 sentences: why solving THIS teaches you something about building REAL systems under constraint, not just DSA theory",
+  "productionReality": "The unsexy production truth: what engineer frustration, business pressure, or scale reality does THIS problem represent?",
+  "skillYouGain": "Specific technical skill or debugging mindset: what can you NOW build or debug that you couldn't before solving this?",
+  "whenYourSeeThis": "Signal in real code: what pattern in a codebase or system design tells you THIS exact problem is being solved",
+  "companies": ["Real companies known to hire specifically for this exact problem"],
+  "analogy": "One analogy from ACTUAL WORK (not nature/animals): how does '{title}' map to something a junior engineer encounters on day 1",
   "difficulty": "{difficulty}"
 }}
 
-CRITICAL RULES:
-- Every field must be about "{title}" specifically, not about the general pattern
-- whereUsed items must name real products and explain the EXACT use of this computation
-- The analogy must be unique to this problem, not reusable for other problems
+RULES:
+- productsNeedThis must list ACTUAL products with specific, user-facing scenarios (not generic 'tech companies use algorithms')
+- costOfGettingWrong must describe REAL consequences (latency SLA miss = money, scale limit = business decision delayed, user experience = churn)
+- productionReality must feel like overhearing engineers in Slack or Zoom, not Wikipedia
+- skillYouGain must be actionable: 'identify memory bottlenecks in X' not 'learn about optimization'
+- whenYouSeeThis must be about pattern recognition in real codebases
 - Return ONLY valid JSON"""
 
 
-DEEPER_PROMPT = """You are a senior engineer doing a deep technical review of one specific problem.
+DEEPER_PROMPT = """You are a senior engineer doing a deep technical review.
 
 Problem: "{title}"
 Pattern: {pattern}
 
-Think about THIS problem's unique characteristics:
-- What are the edge cases specific to "{title}" (not generic edge cases)
-- What system design scenario uses THIS exact computation
-- What follow-up problems build DIRECTLY on "{title}"
+Your goal: explain NOT just the algorithm, but why THIS constraint matters in production systems.
 
 Return ONLY valid JSON:
 {{
-  "timeComplexity": "Big-O for the optimal solution to '{title}' with a one-line justification",
-  "spaceComplexity": "Big-O with justification specific to this problem's constraints",
-  "systemDesignConnection": "2-3 sentences: a real distributed system or production scenario where '{title}' exact computation appears. Name the actual system and explain why this specific algorithm is needed there.",
+  "timeComplexity": "Optimal Big-O for '{title}' with one-line justification specific to this problem's constraints",
+  "spaceComplexity": "Big-O with 1-line justification for why space matters here (not generic 'use extra space')",
+  "systemDesignConnection": "Real distributed/high-scale system where '{title}' exact computation is the bottleneck or decision point. Name the actual system, not 'databases in general'",
+  "scalingPoint": "At what scale does the naive solution break? (e.g., '1M queries/sec, connection pooling becomes the constraint')",
   "edgeCases": [
-    "Edge case specific to '{title}' constraints (e.g. input = 0, input = 1, overflow)",
-    "A non-obvious edge case that trips up candidates on this exact problem",
-    "A third edge case related to this problem's specific constraints"
+    "Edge case SPECIFIC to '{title}' that trips up candidates and shows up in prod bugs",
+    "Non-obvious edge case that reveals whether candidate thinks about constraints",
+    "Constraint-specific case that would break if someone misread the problem"
   ],
+  "debuggingSignal": "How would you KNOW in production that this exact problem is being solved wrong? (latency dashboard, error pattern, resource spike, etc.)",
   "followUpProblems": [
-    "A harder LeetCode problem that directly extends '{title}'",
-    "A related problem that uses the same core insight differently"
+    "Harder LeetCode/real problem that directly extends '{title}' under real constraints",
+    "Variant that shows up when you scale the original to production"
   ],
-  "mentalModel": "2-3 sentences: the exact mental model for '{title}' specifically — how an experienced engineer thinks about this problem the moment they see it, what they recognize, and how they approach it."
+  "mentalModel": "Exact mental model for '{title}': how does a senior engineer think about it the MOMENT they see the constraint? (what's the first instinct, not the algorithm)",
+  "productionTrap": "The most common way engineers get THIS wrong in production systems (not on LeetCode)"
 }}"""
 
 
-DAILY_REPORT_PROMPT = """You are a world-class DSA coach analyzing a developer's actual practice data.
-Be specific, data-driven, and brutally honest.
+DAILY_REPORT_PROMPT = """You are a production-focused DSA coach analyzing a developer's actual practice data.
+Be specific, data-driven, and brutally honest about what their trajectory means for real systems.
 
 Student Stats:
 {stats}
@@ -106,32 +122,38 @@ Recent Problems Solved (last {count}):
 
 Return ONLY valid JSON:
 {{
-  "overallAssessment": "2-3 sentences referencing their ACTUAL numbers — total solved, streak, difficulty split. Be specific and honest.",
-  "strongTopics": ["Their most-solved topic", "Second strongest", "Third if applicable"],
-  "weakTopics": ["Topic with fewest attempts or worst time", "Second weakest", "Third if applicable"],
-  "insight": "ONE specific data-driven insight referencing their actual stats. Example: 'You solve Easy 3x faster than Medium — the bottleneck is DP pattern recognition, not coding speed.'",
-  "recommendation": "Specific next step: exact problem type or LeetCode problem name, and why based on their data gaps.",
-  "motivationalMessage": "Short genuine message referencing something specific from their data — streak, a hard problem they solved, or growth.",
-  "predictedLevel": "Beginner / Apprentice / Intermediate / Advanced / Expert — based on their actual data"
+  "overallAssessment": "2-3 sentences: referencing their ACTUAL numbers (total, streak, difficulty split). What does this trajectory say about their production-readiness?",
+  "strongTopics": ["Most-solved topic", "Second strongest", "Third if applicable"],
+  "weakTopics": ["Topic with fewest solves or slowest time", "Second weakest", "Third if applicable"],
+  "productionRelevance": "Which of their strong/weak topics actually matter in real systems? (Some topics are common in interviews but rare in prod)",
+  "bottleneck": "If they were on your team TODAY, what ACTUAL class of problems would slow them down on production systems?",
+  "nextTarget": "Specific problem type or category to focus on NEXT and why (not just 'do medium problems')",
+  "trainingGap": "The unsexy gap between their practice and what prod systems actually require (e.g., 'you practice isolated problems, prod = integration')",
+  "motivationalMessage": "Specific reference to their data that shows progress or potential",
+  "predictedLevel": "Beginner / Apprentice / Intermediate / Advanced / Expert"
 }}"""
 
 
 # ─────────────────────────────────────────────
-# JSON PARSER
+# JSON PARSER — fixed regex
 # ─────────────────────────────────────────────
 
 def parse_json_response(raw: str) -> dict:
     raw = raw.strip()
-    cleaned = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
-    cleaned = re.sub(r'\s*```$', '', cleaned, flags=re.MULTILINE)
+
+    # Strip markdown code fences if present
+    cleaned = re.sub(r"^```(?:json)?\s*", "", raw, flags=re.MULTILINE)
+    cleaned = re.sub(r"\s*```\s*$", "", cleaned, flags=re.MULTILINE)
     cleaned = cleaned.strip()
 
+    # Try direct parse
     try:
         return json.loads(cleaned)
     except json.JSONDecodeError:
         pass
 
-    match = re.search(r'\{[\s\S]*\}', cleaned)
+    # Find first {...} block
+    match = re.search(r"\{[\s\S]*\}", cleaned)
     if match:
         try:
             return json.loads(match.group())
@@ -163,24 +185,23 @@ async def analyze_problem(data: ProblemInput) -> dict:
                 {
                     "role": "system",
                     "content": (
-                        "You are an expert DSA teacher. "
+                        "You are a production engineer, NOT a DSA tutor. "
                         "Always respond with valid JSON only. "
-                        "Make every response specific to the exact problem asked — never give generic pattern advice."
+                        "Every answer must explain the ACTUAL business/system reason this problem matters. "
+                        "Avoid generic 'this is used in tech' responses. "
+                        "Be specific to production constraints, money, scale, user impact."
                     ),
                 },
                 {"role": "user", "content": prompt},
             ],
             temperature=0.75,
-            max_tokens=900,
+            max_tokens=1200,
         )
         raw = response.choices[0].message.content.strip()
         return parse_json_response(raw)
 
     except Exception as e:
-        import logging
-        logging.getLogger("dsa-engine").warning(
-            f"analyze_problem failed ({type(e).__name__}: {e}) — returning fallback"
-        )
+        logger.warning(f"analyze_problem failed ({type(e).__name__}: {e}) — returning fallback")
         return _fallback_analysis(data)
 
 
@@ -194,31 +215,32 @@ async def get_deeper_explanation(title: str, pattern: str) -> dict:
                 {
                     "role": "system",
                     "content": (
-                        "You are a senior FAANG engineer doing interview prep. "
+                        "You are a senior production engineer doing interview prep. "
                         "Respond with valid JSON only. "
-                        "Every answer must be specific to the exact problem, not generic."
+                        "Focus on why THIS problem matters in real systems under constraint. "
+                        "Be specific about scale, bottlenecks, production failure modes."
                     ),
                 },
                 {"role": "user", "content": prompt},
             ],
             temperature=0.5,
-            max_tokens=1000,
+            max_tokens=1200,
         )
         raw = response.choices[0].message.content.strip()
         return parse_json_response(raw)
 
     except Exception as e:
-        import logging
-        logging.getLogger("dsa-engine").warning(
-            f"get_deeper_explanation failed ({type(e).__name__}: {e}) — returning fallback"
-        )
+        logger.warning(f"get_deeper_explanation failed ({type(e).__name__}: {e}) — returning fallback")
         return {
             "timeComplexity": "Analysis unavailable — try again",
             "spaceComplexity": "Analysis unavailable — try again",
             "systemDesignConnection": "AI analysis temporarily unavailable. Refresh to retry.",
-            "edgeCases": ["Input = 0", "Input = 1", "Maximum integer value (overflow check)"],
-            "followUpProblems": ["Valid Perfect Square (LeetCode 367)", "Pow(x, n) (LeetCode 50)"],
-            "mentalModel": "Identify the search space, define the condition, then binary search on the answer."
+            "scalingPoint": "100K+ scale usually exposes this problem",
+            "edgeCases": ["Empty input", "Single element", "Maximum constraint value"],
+            "debuggingSignal": "Monitor latency dashboards and memory usage patterns",
+            "followUpProblems": ["Distributed variant of this problem", "Caching layer needed variant"],
+            "mentalModel": "Identify the core constraint, work backward from the output, then find the efficient path",
+            "productionTrap": "Assuming local optimization works at scale without testing under real load"
         }
 
 
@@ -255,21 +277,42 @@ async def generate_daily_report(history: list, stats: dict) -> dict:
         count=count,
     )
 
-    response = await _get_client().chat.completions.create(
-        model=POWER_MODEL,
-        messages=[
-            {
-                "role": "system",
-                "content": "You are a world-class DSA coach. Be specific and data-driven. Respond with valid JSON only.",
-            },
-            {"role": "user", "content": prompt},
-        ],
-        temperature=0.65,
-        max_tokens=800,
-    )
+    try:
+        response = await _get_client().chat.completions.create(
+            model=POWER_MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a production-focused DSA coach. "
+                        "Be specific, data-driven, and honest about production impact. "
+                        "Respond with valid JSON only. "
+                        "Connect their practice patterns to what they'd actually face in real systems."
+                    ),
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.65,
+            max_tokens=900,
+        )
+        raw = response.choices[0].message.content.strip()
+        return parse_json_response(raw)
 
-    raw = response.choices[0].message.content.strip()
-    return parse_json_response(raw)
+    except Exception as e:
+        logger.warning(f"generate_daily_report failed ({type(e).__name__}: {e}) — returning fallback")
+        total = stats_summary["totalSolved"]
+        streak = stats_summary["streak"]
+        return {
+            "overallAssessment": f"You've solved {total} problems with a {streak}-day streak. Consistency matters more than speed.",
+            "strongTopics": ["Most frequently solved pattern", "Second strongest", "Third if present"],
+            "weakTopics": ["Least practiced", "Second weakest", "Opportunity area"],
+            "productionRelevance": "Some patterns you practice are interview favorites but less common in prod. Focus on high-impact ones.",
+            "bottleneck": "Identify where you slow down most: is it pattern recognition, implementation, or testing?",
+            "nextTarget": "Mix hard problems with pattern variants to build depth, not just breadth.",
+            "trainingGap": "You're solving isolated problems — next: think about how these combine in real systems.",
+            "motivationalMessage": f"Your {streak}-day streak shows discipline. Keep building on that foundation.",
+            "predictedLevel": stats_summary.get("level", "Beginner"),
+        }
 
 
 # ─────────────────────────────────────────────
@@ -294,55 +337,107 @@ def _get_slowest_tags(tag_stats: dict, n: int = 3) -> list:
 
 
 def _fallback_analysis(data: ProblemInput) -> dict:
-    """Fallback when AI is unavailable — still tries to be problem-specific."""
+    """
+    Fallback analysis when AI is unavailable.
+    Still generates problem-specific insights where possible.
+    """
     title = data.title or "this problem"
     tags_lower = [t.lower() for t in (data.tags or [])]
 
-    pattern_map = {
-        "binary search": "Binary Search on Answer",
-        "math": "Mathematical Computation",
-        "two pointers": "Two Pointers",
-        "dynamic programming": "Dynamic Programming",
-        "graph": "Graph Traversal",
-        "tree": "Tree Traversal",
-        "sliding window": "Sliding Window",
-        "hash table": "Hash Map",
-        "stack": "Stack / Monotonic Stack",
-        "heap": "Priority Queue",
-        "linked list": "Linked List",
-        "string": "String Processing",
-        "backtracking": "Backtracking",
-        "greedy": "Greedy",
-        "array": "Array Traversal",
+    # Map patterns to production contexts
+    pattern_context = {
+        "binary search": {
+            "pattern": "Search Space Pruning",
+            "production": "Finding thresholds at scale (pricing tiers, feature flags, system limits)",
+            "signal": "Latency > threshold causing timeouts in search/matching"
+        },
+        "two pointers": {
+            "pattern": "Multi-Index Traversal",
+            "production": "Collision detection, matching, duplicate removal in streams",
+            "signal": "O(n²) naive solution timing out with real data"
+        },
+        "sliding window": {
+            "pattern": "Constraint-Based Window",
+            "production": "Rate limiting, time-series aggregation, buffer management",
+            "signal": "Memory spikes when processing continuous data streams"
+        },
+        "dynamic programming": {
+            "pattern": "State Memoization",
+            "production": "Cost optimization in decision trees, resource allocation, caching strategies",
+            "signal": "Exponential blowup in recursive solutions at 1K+ input size"
+        },
+        "hash table": {
+            "pattern": "O(1) Lookup",
+            "production": "Deduplication, session management, distributed cache validation",
+            "signal": "Lookup latency becoming bottleneck as data grows"
+        },
+        "graph": {
+            "pattern": "Relationship Traversal",
+            "production": "Recommendation systems, dependency resolution, network routing",
+            "signal": "BFS/DFS timeout when graph has >10K nodes"
+        },
+        "tree": {
+            "pattern": "Hierarchical Search",
+            "production": "Autocomplete indices, permission hierarchies, geographic partitioning",
+            "signal": "Search latency linear in tree size instead of logarithmic"
+        },
+        "stack": {
+            "pattern": "LIFO Processing",
+            "production": "Browser history, undo/redo, expression parsing in compilers",
+            "signal": "Recursive calls hitting stack overflow on deep inputs"
+        },
+        "linked list": {
+            "pattern": "Sequential Access",
+            "production": "Memory-efficient queuing, LRU cache implementation, immutable data structures",
+            "signal": "Need for efficient insertion/deletion at arbitrary positions"
+        },
+        "string": {
+            "pattern": "Pattern Matching",
+            "production": "Log parsing, config validation, text search optimization",
+            "signal": "String scanning becoming bottleneck in text processing pipeline"
+        },
     }
 
-    pattern = "General Problem Solving"
-    for key, val in pattern_map.items():
+    # Find matching context
+    pattern = "Core Problem Solving"
+    context = {
+        "pattern": pattern,
+        "production": "General computation",
+        "signal": "Performance degradation"
+    }
+
+    for key, val in pattern_context.items():
         if any(key in t for t in tags_lower):
-            pattern = val
+            context = val
+            pattern = val["pattern"]
             break
 
     return {
         "pattern": pattern,
-        "difficulty": data.difficulty or "Unknown",
-        "whySolveThis": (
-            f"'{title}' is a classic problem that builds core intuition for {pattern}. "
-            "Mastering it gives you a template for a whole family of similar problems. "
-            "⚠️ AI offline — showing cached insights. Refresh to get personalized analysis."
-        ),
-        "realWorldConnection": (
-            f"The {pattern} technique used in '{title}' appears directly in production systems "
-            "that need to compute or search efficiently at scale."
-        ),
-        "whereUsed": [
-            f"Google: uses {pattern} in search index traversal and query optimization",
-            f"Amazon: applies it in recommendation filtering and inventory systems",
-            f"Netflix: uses it for real-time content ranking pipelines",
+        "problemSolves": f"'{title}' solves the core constraint: {context['production'].lower()}",
+        "productsNeedThis": [
+            {
+                "product": "High-scale systems (any company with millions of users)",
+                "whyTheNeed": context['signal']
+            },
+            {
+                "product": "Data-heavy services (analytics, search, recommendations)",
+                "whyTheNeed": f"Efficiency in '{title}' directly impacts query latency SLA"
+            },
+            {
+                "product": "Real-time systems (trading, monitoring, streaming)",
+                "whyTheNeed": "Microseconds matter — naive solution = cascading failures"
+            }
         ],
-        "whyCompaniesAsk": (
-            f"'{title}' tests whether you can recognize the {pattern} structure, "
-            "handle edge cases correctly, and write clean optimal code under pressure."
+        "costOfGettingWrong": f"Inefficient solution hits scaling wall at 1K-10K inputs. On prod: 100ms query → 5sec query → SLA miss → customer churn.",
+        "whyThisProblemMatters": (
+            f"'{title}' isn't about beauty — it's about hitting a hard constraint under real load. "
+            "Solving it teaches you to recognize bottlenecks before they become critical."
         ),
-        "companies": ["Google", "Amazon", "Microsoft", "Meta", "Apple"],
-        "analogy": f"⚠️ AI temporarily unavailable. Refresh in 30 seconds for a personalized analogy for '{title}'.",
+        "productionReality": f"Engineers solve this because they hit it. Not theory — necessity.",
+        "skillYouGain": f"Recognize {context['pattern'].lower()} bottlenecks in code. Debug latency dashboards. Know when optimization = business critical.",
+        "whenYourSeeThis": f"When you see {context['signal'].lower()} in monitoring or perf profilers.",
+        "companies": ["Any company operating at scale: Google, Uber, Stripe, DoorDash, Airbnb"],
+        "analogy": f"Like tuning a car engine: you don't study it for art's sake — you study it because the car is slow.",
+        "difficulty": data.difficulty or "Unknown"
     }
