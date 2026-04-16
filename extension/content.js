@@ -336,12 +336,17 @@
   function requestDeeperExplanation(data, pattern) {
     const body = document.getElementById('ddp-body');
     if (body) {
-      body.innerHTML += `
-        <div id="ddp-deeper" class="ddp-section ddp-deeper-loading">
+      // Remove existing deep dive if any
+      document.getElementById('ddp-deeper')?.remove();
+      const deeperDiv = document.createElement('div');
+      deeperDiv.id = 'ddp-deeper';
+      deeperDiv.innerHTML = `
+        <div class="ddp-deeper-loading">
           <div class="ddp-spinner ddp-spinner-sm"></div>
           <span>Loading deeper analysis...</span>
         </div>
       `;
+      body.appendChild(deeperDiv);
     }
 
     chrome.runtime.sendMessage(
@@ -349,13 +354,12 @@
       (response) => {
         const deeperEl = document.getElementById('ddp-deeper');
         if (!deeperEl) return;
-
         if (response?.success) {
           const d = response.data;
           deeperEl.innerHTML = `
-            <div class="ddp-section-title" style="margin-bottom:10px">
+            <div class="ddp-deep-title">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              Deep Dive Analysis
+              Deep Dive
             </div>
 
             <div class="ddp-complexity-row">
@@ -369,36 +373,38 @@
               </div>
             </div>
 
-            <div class="ddp-section" style="padding:0 0 10px">
-              <div class="ddp-section-title" style="margin-bottom:6px">
+            <div class="ddp-deep-section">
+              <div class="ddp-section-title">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                 System Design Link
               </div>
               <p class="ddp-text">${d.systemDesignConnection || ''}</p>
             </div>
 
-            <div class="ddp-section" style="padding:0 0 10px">
-              <div class="ddp-section-title" style="margin-bottom:6px">
+            <div class="ddp-deep-section">
+              <div class="ddp-section-title">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
-                Edge Cases to Watch
+                Edge Cases
               </div>
               <ul class="ddp-list">${(d.edgeCases || []).map(e => `<li>${e}</li>`).join('')}</ul>
             </div>
 
-            <div class="ddp-section" style="padding:0 0 10px; border:none">
-              <div class="ddp-section-title" style="margin-bottom:6px">
+            <div class="ddp-deep-section">
+              <div class="ddp-section-title">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
                 Follow-Up Problems
               </div>
               <div class="ddp-chips">${(d.followUpProblems || []).map(p => `<span class="ddp-chip ddp-chip-blue">${p}</span>`).join('')}</div>
             </div>
 
-            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:11px 12px;margin-top:4px">
-              <div class="ddp-section-title" style="margin-bottom:6px">
+            <div class="ddp-deep-section">
+              <div class="ddp-section-title">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42"/></svg>
                 Mental Model
               </div>
-              <p class="ddp-text" style="font-style:italic;color:rgba(255,255,255,0.58)">${d.mentalModel || ''}</p>
+              <div class="ddp-mental-box">
+                <p class="ddp-mental-text">${d.mentalModel || ''}</p>
+              </div>
             </div>
           `;
         } else {
