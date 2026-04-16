@@ -1,10 +1,8 @@
 // background.js — DSA Dopamine Engine Service Worker
 // Handles all API calls, storage, and message routing
 
-// ── Backend URL Config ──
-const PRODUCTION_URL = 'https://dsabittle-production.up.railway.app';
-const LOCAL_URL      = 'http://localhost:8000';
-const BACKEND_URL    = PRODUCTION_URL || LOCAL_URL;
+// ── Backend URL ──
+const BACKEND_URL = 'https://dsabittle-production.up.railway.app';
 
 // ── Fetch with retry + timeout (handles Railway cold-start drops) ──
 // Railway free tier drops the TCP connection during cold-start,
