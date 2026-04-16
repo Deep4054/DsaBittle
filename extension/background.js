@@ -207,20 +207,8 @@ function generateFallbackDeepDive(data) {
 // ── Save problem open event ──
 async function saveProblemOpen(data) {
   await chrome.storage.local.set({
-    activeProblem: {
-      ...data,
-      openedAt: Date.now(),
-    },
+    activeProblem: { ...data, openedAt: Date.now() },
   });
-
-  // Update daily activity
-  const storage = await chrome.storage.local.get(['stats']);
-  const stats = storage.stats || getDefaultStats();
-  const today = getTodayKey();
-  if (!stats.dailyActivity) stats.dailyActivity = {};
-  // Just record the visit (not a solve yet)
-  await chrome.storage.local.set({ stats });
-
   return { success: true };
 }
 
@@ -354,45 +342,34 @@ async function clearAllData() {
 
 // ── Alarms: weekly report + Railway keep-alive ──
 chrome.runtime.onInstalled.addListener(() => {
-  // Weekly report reminder
-  chrome.alarms.create('weekly-report', {
-    periodInMinutes: 60 * 24 * 7,
-  });
-  // Keep Railway warm — ping every 4 minutes to prevent cold-starts
-  chrome.alarms.create('keep-alive', {
-    periodInMinutes: 4,
-  });
+  chrome.alarms.create('weekly-report', { periodInMinutes: 60 * 24 * 7 });
+  chrome.alarms.create('keep-alive',    { periodInMinutes: 4 });
   console.log('[DSA Engine] Extension installed. Backend:', BACKEND_URL);
 });
 
-// Also recreate keep-alive on service worker startup (in case it was lost)
-chrome.alarms.get('keep-alive', (alarm) => {
-  if (!alarm) {
-    chrome.alarms.create('keep-alive', { periodInMinutes: 4 });
-    console.log('[DSA Engine] Recreated keep-alive alarm');
-  }
+chrome.runtime.onStartup.addListener(() => {
+  chrome.alarms.create('keep-alive', { periodInMinutes: 4 });
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === 'weekly-report') {
     chrome.storage.local.get(['stats'], (storage) => {
       const stats = storage.stats || {};
-      if ((stats.totalSolved || 0) > 0) {
-        chrome.notifications?.create({
+      if ((stats.totalSolved || 0) > 0 && chrome.notifications) {
+        chrome.notifications.create('weekly-report', {
           type: 'basic',
           iconUrl: 'icons/icon128.png',
           title: '🧠 DSA Weekly Report Ready',
-          message: `You solved ${stats.totalSolved} problems this week! Check your dashboard.`,
+          message: `You've solved ${stats.totalSolved} problems! Check your dashboard.`,
         });
       }
     });
   }
 
   if (alarm.name === 'keep-alive') {
-    // Silent ping to keep Railway from sleeping
     fetch(`${BACKEND_URL}/health`)
       .then(r => r.json())
-      .then(d => console.log('[DSA Engine] Keep-alive ping OK:', d.status))
-      .catch(e => console.warn('[DSA Engine] Keep-alive ping failed:', e.message));
+      .then(d => console.log('[DSA Engine] Keep-alive OK:', d.status))
+      .catch(e => console.warn('[DSA Engine] Keep-alive failed:', e.message));
   }
 });

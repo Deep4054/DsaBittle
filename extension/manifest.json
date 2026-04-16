@@ -8,7 +8,7 @@
     "alarms",
     "tabs",
     "activeTab",
-    "identity"
+    "notifications"
   ],
   "host_permissions": [
     "https://leetcode.com/*",
@@ -17,8 +17,7 @@
     "https://dsabittle-production.up.railway.app/*"
   ],
   "background": {
-    "service_worker": "background.js",
-    "type": "module"
+    "service_worker": "background.js"
   },
   "content_scripts": [
     {
