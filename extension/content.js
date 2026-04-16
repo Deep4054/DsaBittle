@@ -296,20 +296,25 @@
     const productsNeed = insights.productsNeedThis || [];
     const whereUsed    = insights.whereUsed || insights.useCases || [];
 
-    // ── Helpers (must be defined before use since they're const, not function) ──
-    // Strip problem title references like '100. Same Tree' from AI text
+    // ── Helpers ──
+    // Strip ANY quoted title like 'Nested Lists' or '100. Same Tree' from AI text
     const cleanText = (t) => (t || '')
-      .replace(/'\d+\.\s[^']+'/g, 'this problem')
-      .replace(/"\d+\.\s[^"]+"/g, 'this problem')
+      .replace(/'[^']{2,40}'/g, 'this problem')   // any 'Quoted Title'
+      .replace(/"[^"]{2,40}"/g, 'this problem')   // any "Quoted Title"
       .replace(/\s{2,}/g, ' ').trim();
 
-    // Remove duplicate sentences in a paragraph
+    // Remove duplicate sentences (handles both \n duplicates and . split dupes)
     const dedup = (t) => {
       if (!t) return '';
-      const sentences = t.split(/\.\s+/);
+      // First collapse newline duplicates
+      const lines = t.split(/\n/).map(l => l.trim()).filter(Boolean);
+      const uniqLines = [...new Set(lines)];
+      const joined = uniqLines.join(' ');
+      // Then deduplicate by sentence
+      const sentences = joined.split(/\.\s+/);
       const seen = new Set();
       return sentences.filter(s => {
-        const k = s.toLowerCase().slice(0, 55);
+        const k = s.toLowerCase().replace(/\s+/g, ' ').slice(0, 55);
         if (seen.has(k)) return false;
         seen.add(k); return true;
       }).join('. ').replace(/\.{2,}/g, '.').trim();
@@ -581,6 +586,45 @@
     });
     observer.observe(document.body, { childList: true, subtree: true });
     setTimeout(() => observer.disconnect(), 20000);
+
+    // ── Strategy 4: URL polling — detect SPA navigation to new problem
+    let lastUrl = location.href;
+    const urlPoller = setInterval(() => {
+      if (!chrome.runtime?.id) { clearInterval(urlPoller); return; }
+      const currentUrl = location.href;
+      if (currentUrl === lastUrl) return;
+      lastUrl = currentUrl;
+
+      // Only react to LeetCode problem pages
+      if (!currentUrl.includes('/problems/')) return;
+
+      console.log('[DSA Engine] Problem URL changed — resetting panel');
+
+      // Reset state
+      panelInitialized = false;
+      attempts = 0;
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+
+      // Show loading spinner in existing panel body (faster than full rebuild)
+      const existingBody   = document.getElementById('ddp-body');
+      const existingFooter = document.getElementById('ddp-footer');
+      if (existingBody) {
+        existingBody.innerHTML = `
+          <div class="ddp-loading">
+            <div class="ddp-spinner"></div>
+            <p>Analyzing with AI...</p>
+            <small>Powered by NVIDIA NIM</small>
+          </div>`;
+      }
+      if (existingFooter) existingFooter.style.display = 'none';
+
+      // Wait a moment for LeetCode DOM to update, then re-run
+      setTimeout(() => {
+        problemData = extractProblemData();
+        panelInitialized = true; // mark so tryInit doesn't also fire
+        requestAIInsights(problemData);
+      }, 1200);
+    }, 800);
 
     // Start polling after 800ms (LeetCode needs a moment to hydrate React)
     setTimeout(tryInit, 800);
