@@ -24,8 +24,8 @@ def _get_client() -> AsyncOpenAI:
         )
     return _client
 
-FAST_MODEL  = "meta/llama-3.3-70b-instruct"
-POWER_MODEL = "meta/llama-3.3-70b-instruct"
+FAST_MODEL  = "meta/llama-3.1-8b-instruct"    # lighter — deeper + daily
+POWER_MODEL = "meta/llama-3.3-70b-instruct"   # heavy  — core analysis
 
 
 # ─────────────────────────────────────────────
@@ -149,7 +149,7 @@ def parse_json_response(raw: str) -> dict:
 
 async def analyze_problem(data: ProblemInput) -> dict:
     tags_str = ", ".join(data.tags) if data.tags else "not provided"
-    desc_str = (data.description or "")[:800]
+    desc_str = (data.description or "")[:500]
 
     prompt = ANALYZE_PROMPT.format(
         title=data.title,
@@ -160,17 +160,11 @@ async def analyze_problem(data: ProblemInput) -> dict:
 
     try:
         response = await _get_client().chat.completions.create(
-            model=FAST_MODEL,
+            model=POWER_MODEL,
             messages=[
                 {
                     "role": "system",
-                    "content": (
-                        "You are a senior engineer who has shipped real systems at Google, Uber, Stripe, and startups. "
-                        "You explain DSA problems like a dev talking to another dev — casual, direct, specific. "
-                        "No corporate language, no templates, no 'Key Insight:' headers. "
-                        "Every sentence must be specific to THIS problem — zero generic filler. "
-                        "Respond with valid JSON only. No markdown, no backticks."
-                    ),
+                    "content": "Respond with valid JSON only. No markdown, no backticks, no preamble.",
                 },
                 {"role": "user", "content": prompt},
             ],
@@ -190,21 +184,16 @@ async def get_deeper_explanation(title: str, pattern: str) -> dict:
 
     try:
         response = await _get_client().chat.completions.create(
-            model=POWER_MODEL,
+            model=FAST_MODEL,
             messages=[
                 {
                     "role": "system",
-                    "content": (
-                        "You are a senior engineer explaining to a smart friend — casual, specific, real. "
-                        "No formal structure, no textbook definitions. "
-                        "Respond with valid JSON only. No markdown, no backticks. "
-                        "Every field must be specific to THIS problem, not generic DSA advice."
-                    ),
+                    "content": "Respond with valid JSON only. No markdown, no backticks, no preamble.",
                 },
                 {"role": "user", "content": prompt},
             ],
             temperature=0.7,
-            max_tokens=1200,
+            max_tokens=900,
         )
         raw = response.choices[0].message.content.strip()
         return parse_json_response(raw)
@@ -259,21 +248,16 @@ async def generate_daily_report(history: list, stats: dict) -> dict:
 
     try:
         response = await _get_client().chat.completions.create(
-            model=POWER_MODEL,
+            model=FAST_MODEL,
             messages=[
                 {
                     "role": "system",
-                    "content": (
-                        "You are a production-focused DSA coach. "
-                        "Be specific, data-driven, and honest about production impact. "
-                        "Respond with valid JSON only. "
-                        "Connect their practice patterns to what they'd actually face in real systems."
-                    ),
+                    "content": "Respond with valid JSON only. No markdown, no backticks, no preamble.",
                 },
                 {"role": "user", "content": prompt},
             ],
-            temperature=0.65,
-            max_tokens=900,
+            temperature=0.6,
+            max_tokens=800,
         )
         raw = response.choices[0].message.content.strip()
         return parse_json_response(raw)
