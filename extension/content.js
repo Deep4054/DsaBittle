@@ -290,10 +290,11 @@
     const diffClass = (insights.difficulty || data.difficulty || 'unknown').toLowerCase();
     const pattern   = insights.pattern || '';
 
-    // New 3-field schema — with fallback to old fields
-    const whatIsThis = insights.whatIsThis || insights.realWorldStory || insights.problemSolves || '';
-    const realUse    = insights.realUse    || insights.casualUseCase  || insights.whySolveIt   || '';
-    const whatBreaks = insights.whatBreaks || insights.whyItHurts     || insights.costOfGettingWrong || '';
+    // 4-field schema
+    const whatIsThis     = insights.whatIsThis     || insights.realWorldStory || insights.problemSolves || '';
+    const realUse        = insights.realUse        || insights.casualUseCase  || insights.whySolveIt   || '';
+    const whyThisApproach= insights.whyThisApproach|| '';
+    const whatBreaks     = insights.whatBreaks     || insights.whyItHurts     || insights.costOfGettingWrong || '';
 
     let html = `<div class="ddp-problem-meta">
       <span class="ddp-diff-badge ddp-diff-${diffClass}">${insights.difficulty || data.difficulty || 'Unknown'}</span>
@@ -302,21 +303,28 @@
 
     if (whatIsThis) {
       html += `<div class="ddp-chat-msg">
-        <div class="ddp-chat-label">💡 This is</div>
+        <div class="ddp-chat-label">What's going on</div>
         <p class="ddp-chat-text">${whatIsThis}</p>
       </div>`;
     }
 
     if (realUse) {
       html += `<div class="ddp-chat-msg">
-        <div class="ddp-chat-label">👀 Where you'll hit this</div>
+        <div class="ddp-chat-label">Real use</div>
         <p class="ddp-chat-text">${realUse}</p>
+      </div>`;
+    }
+
+    if (whyThisApproach) {
+      html += `<div class="ddp-chat-msg">
+        <div class="ddp-chat-label">Why this way</div>
+        <p class="ddp-chat-text">${whyThisApproach}</p>
       </div>`;
     }
 
     if (whatBreaks) {
       html += `<div class="ddp-chat-msg">
-        <div class="ddp-chat-label">⚠️ If you mess this up</div>
+        <div class="ddp-chat-label">If you mess this up</div>
         <p class="ddp-chat-text">${whatBreaks}</p>
       </div>`;
     }

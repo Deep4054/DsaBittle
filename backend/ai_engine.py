@@ -31,27 +31,29 @@ POWER_MODEL = "meta/llama-3.3-70b-instruct"
 # MAIN PROMPT — ChatGPT casual, honest, no template
 # ─────────────────────────────────────────────
 
-ANALYZE_PROMPT = """You're a friendly engineer explaining things to a developer friend.
+ANALYZE_PROMPT = """You're explaining this problem to your friend who is coding with you.
 
 Problem: "{title}"
 Tags: {tags}
 Description: {description}
 
-Be conversational and helpful. Give enough detail to be useful, but stay grounded.
+Your goal: Make the user say — "haan bhai ab samajh aaya ye kyun kar rahe hai"
 
-RULES:
-- If simple problem → keep it practical, 3-4 lines per field
-- No generic filler like "used in many systems" or "general computation"
-- No fake scale drama (1M users, SLA) unless truly relevant
-- Be specific to THIS problem
-- Friendly tone: "You're basically...", "This shows up when...", "If you get this wrong..."
+STRICT RULES:
+- Talk ONLY about THIS problem (not generic patterns)
+- Give REAL developer scenario (API, DB, frontend, logs, etc.)
+- NO lines like "used in many systems", "general computation"
+- NO fake scale drama (1M users, SLA) unless truly needed
+- Keep it simple, practical, grounded
+- Tone: like explaining to your friend (casual, direct)
 
-Return ONLY valid JSON (no markdown, no backticks):
+Return ONLY JSON:
 {{
-  "whatIsThis": "3-4 friendly lines. Explain what this problem is actually about in plain terms.",
-  "realUse": "3-5 lines. Where does this show up in real development work? Be specific and conversational.",
-  "whatBreaks": "2-3 lines. What actually goes wrong if you mess this up? Be honest and specific.",
-  "pattern": "Short name — e.g. Column Renaming, Hash Lookup, Binary Search",
+  "whatIsThis": "Explain simply what we're doing here and why this even exists.",
+  "realUse": "REAL dev use case. Example: backend to frontend mismatch, API rename, data cleaning, etc.",
+  "whyThisApproach": "Why THIS method is used instead of something else. What makes it correct here?",
+  "whatBreaks": "What exactly goes wrong in real code if you mess this up.",
+  "pattern": "Short name",
   "difficulty": "{difficulty}"
 }}"""
 
@@ -270,58 +272,70 @@ def _get_slowest_tags(tag_stats: dict, n: int = 3) -> list:
 
 
 def _fallback_analysis(data: ProblemInput) -> dict:
-    title = data.title or "this problem"
-    tags_lower = [t.lower() for t in (data.tags or [])]
+    title = (data.title or "").lower()
+    tags = [t.lower() for t in (data.tags or [])]
 
-    if any(t in tags_lower for t in ["pandas", "dataframe", "database", "sql"]):
+    # Pandas / DataFrame
+    if "rename columns" in title or "rename" in title or "pandas" in tags or "dataframe" in tags:
         return {
-            "pattern": "Schema Transformation",
+            "pattern": "Column Mapping",
             "difficulty": data.difficulty or "Easy",
-            "whatIsThis": "You're just renaming fields so systems stay consistent.",
-            "realUse": "Happens when your backend sends one format and your frontend or analytics expects another. You map field names so everything downstream works.",
-            "whatBreaks": "Wrong column name = missing or blank data in your UI or reports. Nothing crashes, but everything looks broken.",
+            "whatIsThis": "You're just renaming columns in a table so the rest of your code understands the data properly.",
+            "realUse": "Suppose your backend API sends 'first' and 'last', but your frontend or analytics expects 'first_name' and 'last_name'. You rename columns once so everything downstream works without breaking.",
+            "whyThisApproach": "Direct renaming is clean and constant time. Alternative would be copying data or manually mapping everywhere, which is messy and error-prone.",
+            "whatBreaks": "Wrong column names means your UI shows blank data, filters stop working, or joins fail silently. Debugging becomes painful because data exists but names don't match.",
         }
 
-    if "binary search" in tags_lower:
+    # Binary search
+    if "binary search" in tags or "search" in title:
         return {
             "pattern": "Binary Search",
             "difficulty": data.difficulty or "Medium",
-            "whatIsThis": "You're cutting the search space in half each step instead of checking everything.",
-            "realUse": "Git bisect uses this to find which commit broke your build. Database indexes use it to find rows fast. Any sorted list lookup.",
-            "whatBreaks": "Off-by-one errors cause subtle bugs that only appear at boundaries — easy to miss in testing.",
+            "whatIsThis": "You're cutting the search space in half each step instead of checking everything linearly.",
+            "realUse": "Git bisect uses this to find which commit broke your build. Database indexes use it to find rows fast. Any sorted list lookup — package tracking, version history, finding thresholds.",
+            "whyThisApproach": "On sorted data, binary search is O(log n) vs O(n) linear scan. That's 20 steps vs 1 million steps for a million items.",
+            "whatBreaks": "Off-by-one errors cause subtle bugs that only appear at boundaries. Easy to miss in testing, shows up in production.",
         }
 
-    if any(t in tags_lower for t in ["hash table", "hash map"]):
+    # Hash table
+    if any(t in tags for t in ["hash table", "hash map"]) or "two sum" in title:
         return {
             "pattern": "Hash Map Lookup",
             "difficulty": data.difficulty or "Easy",
             "whatIsThis": "You're trading memory for speed — store what you've seen so you can check it in O(1) instead of scanning again.",
-            "realUse": "Checking if a user already exists, finding duplicate transactions, looking up config values — all hash maps under the hood.",
-            "whatBreaks": "Naive O(n²) solution works fine at 1K inputs, falls apart at 100K. That's when it becomes a production incident.",
+            "realUse": "Checking if a user already exists, finding duplicate transactions, looking up config values — all hash maps under the hood. Session management, caching, deduplication.",
+            "whyThisApproach": "Hash map gives O(1) lookup. Alternative is nested loop which is O(n²) — fine for 100 items, kills performance at 10K+.",
+            "whatBreaks": "Naive O(n²) solution works fine in testing with small inputs, falls apart in production with real data volume. That's when it becomes a latency incident.",
         }
 
-    if any(t in tags_lower for t in ["two pointers", "sliding window"]):
+    # Two pointers / sliding window
+    if any(t in tags for t in ["two pointers", "sliding window"]):
         return {
-            "pattern": "Two Pointers" if "two pointers" in tags_lower else "Sliding Window",
+            "pattern": "Two Pointers" if "two pointers" in tags else "Sliding Window",
             "difficulty": data.difficulty or "Medium",
             "whatIsThis": "You're using two indices to avoid nested loops — one pass instead of checking every pair.",
-            "realUse": "Rate limiting windows, finding subarrays in streaming data, deduplication in sorted lists.",
-            "whatBreaks": "Nested loop alternative is O(n²) — fine for small inputs, kills performance at scale.",
+            "realUse": "Rate limiting windows, finding subarrays in streaming data, deduplication in sorted lists. Anywhere you need to track a range or window of elements.",
+            "whyThisApproach": "Single pass O(n) vs nested loop O(n²). Makes the difference between responsive and slow when data size grows.",
+            "whatBreaks": "Nested loop alternative works on small inputs, kills performance at scale. Also easy to get pointer logic wrong and miss edge cases.",
         }
 
-    if "dynamic programming" in tags_lower:
+    # Dynamic programming
+    if "dynamic programming" in tags or "dp" in tags:
         return {
             "pattern": "Dynamic Programming",
             "difficulty": data.difficulty or "Medium",
-            "whatIsThis": "You're caching subproblem results so you don't recompute them — memoization.",
-            "realUse": "Cost optimization, resource allocation, autocomplete suggestions, spell checkers.",
-            "whatBreaks": "Recursive solution without memoization hits exponential time — works on small inputs, crashes on real data.",
+            "whatIsThis": "You're caching subproblem results so you don't recompute them — memoization to avoid exponential blowup.",
+            "realUse": "Cost optimization, resource allocation, autocomplete suggestions, spell checkers. Anywhere you have overlapping subproblems.",
+            "whyThisApproach": "Memoization turns exponential time into polynomial. Without it, recursive solution crashes on inputs larger than 20-30.",
+            "whatBreaks": "Recursive solution without memoization hits exponential time — works on tiny inputs in testing, times out or crashes on real data.",
         }
 
+    # Generic fallback — still honest
     return {
-        "pattern": "Algorithm",
+        "pattern": "Data Transformation",
         "difficulty": data.difficulty or "Unknown",
-        "whatIsThis": f"This is a {(data.tags or ['general'])[0].lower()} problem — a building block that shows up in real codebases.",
-        "realUse": "You'll hit variations of this in data processing, API design, and system utilities.",
-        "whatBreaks": "Getting the logic wrong causes subtle bugs that are hard to trace back to the source.",
+        "whatIsThis": f"This problem is about transforming data into the format you actually need before using it.",
+        "realUse": "In real code, raw data rarely matches your expected format. You often need to rename, filter, or reshape it before using it in APIs, UI, or analytics.",
+        "whyThisApproach": "Doing transformation once upfront keeps the rest of your code clean and consistent. Alternative is handling mismatches everywhere.",
+        "whatBreaks": "If you skip this, you end up with mismatched data causing silent bugs — UI shows blanks, joins fail, filters break.",
     }
