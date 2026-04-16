@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DSA Dopamine Engine</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <!-- ✅ Updated: DM Sans + DM Mono to match popup-glass.css -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="popup-glass.css" />
 </head>
 <body class="glass-popup-body">
@@ -32,7 +33,6 @@
         </div>
       </div>
       <div class="ph-right">
-        <!-- id="popup-level" — read by popup.js -->
         <div class="ph-live">
           <span class="live-dot"></span>
           <span id="popup-level">Beginner</span>
@@ -47,23 +47,22 @@
 
     <!-- SUBTITLE BAR -->
     <div class="ps-bar" id="gp-subtitle-bar">
-      <!-- id="popup-subtitle" — set by popup.js -->
       <span class="ps-text" id="popup-subtitle">Loading your progress...</span>
     </div>
 
     <!-- COLLAPSIBLE BODY -->
     <div class="pb" id="gp-body">
 
-      <!-- Loading state — id="popup-loading" -->
+      <!-- Loading state -->
       <div id="popup-loading" class="pb-loading">
         <div class="pb-spinner"></div>
         <span>Loading stats…</span>
       </div>
 
-      <!-- Main content — id="popup-content" -->
+      <!-- Main content -->
       <div id="popup-content" style="display:none">
 
-        <!-- HERO STATS — ids: stat-total, stat-streak, stat-xp, stat-today -->
+        <!-- HERO STATS -->
         <div class="hero-stats">
           <div class="hs-item" data-col="amber">
             <div class="hs-num" id="stat-total">0</div>
@@ -86,7 +85,7 @@
           </div>
         </div>
 
-        <!-- XP PROGRESS — ids: xp-bar-current-level, xp-bar-next-level, xp-bar-fill, xp-pct -->
+        <!-- XP PROGRESS -->
         <div class="card-glass">
           <div class="cg-head">
             <span class="cg-title">Level Progress</span>
@@ -101,7 +100,7 @@
           </div>
         </div>
 
-        <!-- DIFFICULTY BREAKDOWN — ids: bar-easy, bar-medium, bar-hard, count-easy, count-medium, count-hard -->
+        <!-- DIFFICULTY BREAKDOWN -->
         <div class="card-glass">
           <div class="cg-head">
             <span class="cg-title">
@@ -128,7 +127,7 @@
           </div>
         </div>
 
-        <!-- RECENT PROBLEMS — id: popup-history-list -->
+        <!-- RECENT PROBLEMS -->
         <div class="card-glass card-last">
           <div class="cg-head">
             <span class="cg-title">
@@ -142,7 +141,7 @@
       </div><!-- /popup-content -->
     </div><!-- /pb -->
 
-    <!-- FOOTER — ids: btn-leetcode, btn-dashboard, btn-report -->
+    <!-- FOOTER -->
     <footer class="pf">
       <button class="pf-btn pf-ghost" id="btn-leetcode">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>

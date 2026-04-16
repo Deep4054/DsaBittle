@@ -192,6 +192,52 @@ async function render() {
   }
 }
 
+// ── Excel/CSV Export ──
+function exportToCSV(history, stats) {
+  const headers = ['#', 'Title', 'Difficulty', 'Pattern', 'Tags', 'Time Spent (min)', 'Date Solved', 'URL'];
+  const rows = history.map((item, i) => [
+    i + 1,
+    `"${(item.title || '').replace(/"/g, '""')}"`,
+    item.difficulty || '',
+    `"${(item.pattern || '').replace(/"/g, '""')}"`,
+    `"${(item.tags || []).join(', ').replace(/"/g, '""')}"`,
+    item.timeSpent ? (item.timeSpent / 60).toFixed(1) : '0',
+    item.solvedAt ? new Date(item.solvedAt).toLocaleDateString('en-GB') : '',
+    `"${item.url || ''}"`,
+  ]);
+
+  // Summary rows at top
+  const summary = [
+    ['DSA Dopamine Engine — Progress Export'],
+    [`Exported on: ${new Date().toLocaleDateString('en-GB')}`],
+    [`Total Solved: ${stats.totalSolved || 0}`, `Easy: ${stats.easy || 0}`, `Medium: ${stats.medium || 0}`, `Hard: ${stats.hard || 0}`],
+    [`Current Streak: ${stats.streak || 0} days`, `Total XP: ${stats.xp || 0}`, `Level: ${stats.level || 'Beginner'}`],
+    [],
+    headers,
+    ...rows,
+  ];
+
+  const csv = summary.map(r => r.join(',')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' }); // BOM for Excel
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `dsa-progress-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('btn-export')?.addEventListener('click', async () => {
+  const data    = await new Promise(r => chrome.storage.local.get(['stats', 'history'], r));
+  const history = data.history || [];
+  const stats   = data.stats   || {};
+  if (!history.length) {
+    alert('No problems solved yet — nothing to export!');
+    return;
+  }
+  exportToCSV(history, stats);
+});
+
 // ── AI Report ──
 document.getElementById('btn-report').addEventListener('click', async () => {
   const btn  = document.getElementById('btn-report');
