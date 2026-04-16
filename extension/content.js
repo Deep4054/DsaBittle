@@ -291,46 +291,52 @@
     const pattern   = insights.pattern || '';
 
     // 4-field schema
-    const whatIsThis     = insights.whatIsThis     || insights.realWorldStory || insights.problemSolves || '';
-    const realUse        = insights.realUse        || insights.casualUseCase  || insights.whySolveIt   || '';
-    const whyThisApproach= insights.whyThisApproach|| '';
-    const whatBreaks     = insights.whatBreaks     || insights.whyItHurts     || insights.costOfGettingWrong || '';
+    const whatIsThis      = insights.whatIsThis      || insights.realWorldStory || insights.problemSolves || '';
+    const realUse         = insights.realUse         || insights.casualUseCase  || insights.whySolveIt   || '';
+    const whyThisApproach = insights.whyThisApproach || '';
+    const whatBreaks      = insights.whatBreaks      || insights.whyItHurts     || insights.costOfGettingWrong || '';
 
-    let html = `<div class="ddp-problem-meta">
+    let html = `<div class="ddp-meta-row">
       <span class="ddp-diff-badge ddp-diff-${diffClass}">${insights.difficulty || data.difficulty || 'Unknown'}</span>
-      ${pattern ? `<span class="ddp-pattern-badge">${pattern}</span>` : ''}
-    </div>`;
+      ${pattern ? `<span class="ddp-pattern-pill">${pattern}</span>` : ''}
+    </div><div class="ddp-sections">`;
 
     if (whatIsThis) {
-      html += `<div class="ddp-chat-msg">
-        <div class="ddp-chat-label">What's going on</div>
-        <p class="ddp-chat-text">${whatIsThis}</p>
+      html += `<div class="ddp-section">
+        <span class="ddp-section-pill">WHAT'S GOING ON</span>
+        <div class="ddp-section-title">${whatIsThis.split('.')[0]}.</div>
+        <p class="ddp-section-body">${whatIsThis}</p>
       </div>`;
     }
 
     if (realUse) {
-      html += `<div class="ddp-chat-msg">
-        <div class="ddp-chat-label">Real use</div>
-        <p class="ddp-chat-text">${realUse}</p>
+      html += `<div class="ddp-section">
+        <span class="ddp-section-pill">REAL USE</span>
+        <div class="ddp-section-title">${realUse.split('.')[0]}.</div>
+        <p class="ddp-section-body">${realUse}</p>
       </div>`;
     }
 
     if (whyThisApproach) {
-      html += `<div class="ddp-chat-msg">
-        <div class="ddp-chat-label">Why this way</div>
-        <p class="ddp-chat-text">${whyThisApproach}</p>
+      html += `<div class="ddp-section">
+        <span class="ddp-section-pill">WHY THIS WAY</span>
+        <div class="ddp-section-title">${whyThisApproach.split('.')[0]}.</div>
+        <p class="ddp-section-body">${whyThisApproach}</p>
       </div>`;
     }
 
     if (whatBreaks) {
-      html += `<div class="ddp-chat-msg">
-        <div class="ddp-chat-label">If you mess this up</div>
-        <p class="ddp-chat-text">${whatBreaks}</p>
+      html += `<div class="ddp-section">
+        <span class="ddp-section-pill">IF YOU MESS THIS UP</span>
+        <div class="ddp-section-title">${whatBreaks.split('.')[0]}.</div>
+        <p class="ddp-section-body">${whatBreaks}</p>
       </div>`;
     }
 
+    html += `</div>`;
+
     if (!whatIsThis && !realUse && !whatBreaks) {
-      html += `<div class="ddp-error-box">
+      html = `<div class="ddp-error-box">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <p>AI returned empty — retry in a moment.</p>
         <small>Backend may be cold-starting</small>
