@@ -108,48 +108,25 @@
     link:    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>`,
   };
 
-  let isDark = false;
 
-  // ── Card builder — toggleable sections ──
-  function buildCard({ icon, iconClass, label, preview, content, open = false }) {
-    const id = 'ddpc-' + Math.random().toString(36).slice(2, 8);
+
+  // ── Section builder — Flamingo: pill label → bold heading → body ──
+  function buildSection({ tagLabel, heading, body }) {
+    const headHTML = heading ? `<div class="ddp-section-heading">${heading}</div>` : '';
     return `
-      <div class="ddp-card${open ? ' open' : ''}" id="${id}" data-card>
-        <div class="ddp-card-header" data-card-toggle="${id}">
-          <div class="ddp-card-header-left">
-            <div class="ddp-card-icon ${iconClass}">${icon}</div>
-            <span class="ddp-card-label">${label}</span>
-          </div>
-          <span class="ddp-card-chevron">${SVG.chevron}</span>
-        </div>
-        ${preview ? `<div class="ddp-card-preview">${preview}</div>` : ''}
-        <div class="ddp-card-body">${content}</div>
+      <div class="ddp-section">
+        <div class="ddp-section-tag">${tagLabel}</div>
+        ${headHTML}
+        ${body}
       </div>`;
   }
 
-  // Wire card toggles after innerHTML is set (no inline onclick — CSP safe)
-  function wireCardToggles(container) {
-    container.querySelectorAll('[data-card-toggle]').forEach(header => {
-      header.addEventListener('click', () => {
-        const id = header.getAttribute('data-card-toggle');
-        const card = document.getElementById(id);
-        if (card) card.classList.toggle('open');
-      });
-    });
-  }
 
   // ── STEP 2: Create the floating side panel ──
   function createPanel() {
     document.getElementById('dsa-dopamine-panel')?.remove();
     document.getElementById('ddp-toggle-btn')?.remove();
     if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-
-    // Load saved theme
-    try {
-      if (chrome.runtime?.id) {
-        chrome.storage.local.get(['ddpDark'], d => { isDark = !!d.ddpDark; applyTheme(); });
-      }
-    } catch(e) {}
 
     const panel = document.createElement('div');
     panel.id = 'dsa-dopamine-panel';
@@ -161,7 +138,6 @@
         </div>
         <div class="ddp-header-right">
           <div class="ddp-timer" id="ddp-timer">${SVG.clock} --:--</div>
-          <button class="ddp-theme-btn" id="ddp-theme-btn" title="Toggle theme">${SVG.moon}</button>
           <button class="ddp-close" id="ddp-close-btn" title="Minimize">${SVG.chevron}</button>
         </div>
       </div>
@@ -180,11 +156,10 @@
     `;
 
     document.body.appendChild(panel);
-    applyTheme();
     addToggleButton(panel);
     makeDraggable(panel);
 
-    // Minimize
+    // Minimize toggle
     document.getElementById('ddp-close-btn').addEventListener('click', () => {
       const p = document.getElementById('dsa-dopamine-panel');
       const b = document.getElementById('ddp-close-btn');
@@ -192,13 +167,6 @@
       b.innerHTML = isMin
         ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`
         : SVG.chevron;
-    });
-
-    // Theme toggle
-    document.getElementById('ddp-theme-btn').addEventListener('click', () => {
-      isDark = !isDark;
-      applyTheme();
-      try { chrome.storage.local.set({ ddpDark: isDark }); } catch(e) {}
     });
 
     // Timer
@@ -220,20 +188,6 @@
     panelInitialized = true;
   }
 
-  function applyTheme() {
-    const panel = document.getElementById('dsa-dopamine-panel');
-    if (!panel) return;
-    if (isDark) {
-      panel.classList.add('ddp-dark');
-      const btn = document.getElementById('ddp-theme-btn');
-      if (btn) btn.innerHTML = SVG.sun;
-    } else {
-      panel.classList.remove('ddp-dark');
-      const btn = document.getElementById('ddp-theme-btn');
-      if (btn) btn.innerHTML = SVG.moon;
-    }
-  }
-
   function addToggleButton(panel) {
     document.getElementById('ddp-toggle-btn')?.remove();
     const toggle = document.createElement('button');
@@ -253,14 +207,15 @@
     let dragging = false, ox = 0, oy = 0;
 
     handle.addEventListener('mousedown', (e) => {
-      if (e.target.closest('.ddp-close') || e.target.closest('.ddp-theme-btn') || e.target.closest('.ddp-timer')) return;
+      if (e.target.closest('.ddp-close') || e.target.closest('.ddp-timer')) return;
       dragging = true;
       const rect = panel.getBoundingClientRect();
       ox = e.clientX - rect.left;
       oy = e.clientY - rect.top;
-      panel.style.right = 'auto';
-      panel.style.left  = rect.left + 'px';
-      panel.style.top   = rect.top  + 'px';
+      // Must use setProperty('important') — plain style.x = '' can't override CSS !important
+      panel.style.setProperty('right', 'auto', 'important');
+      panel.style.setProperty('left', rect.left + 'px', 'important');
+      panel.style.setProperty('top',  rect.top  + 'px', 'important');
       panel.classList.add('ddp-dragging');
       e.preventDefault();
     });
@@ -269,8 +224,8 @@
       if (!dragging) return;
       const x = Math.max(0, Math.min(window.innerWidth  - panel.offsetWidth,  e.clientX - ox));
       const y = Math.max(0, Math.min(window.innerHeight - panel.offsetHeight, e.clientY - oy));
-      panel.style.left = x + 'px';
-      panel.style.top  = y + 'px';
+      panel.style.setProperty('left', x + 'px', 'important');
+      panel.style.setProperty('top',  y + 'px', 'important');
     });
 
     document.addEventListener('mouseup', () => {
@@ -327,10 +282,11 @@
     );
   }
 
-  // ── STEP 5: Render AI insights as toggleable cards ──
+  // ── STEP 5: Render AI insights as flat Flamingo-style sections ──
   function renderInsights(insights, data) {
     const body   = document.getElementById('ddp-body');
     const footer = document.getElementById('ddp-footer');
+
     if (!body) return;
 
     const diffClass    = (insights.difficulty || data.difficulty || 'unknown').toLowerCase();
@@ -339,33 +295,115 @@
     const casualCases  = insights.casualUseCases || [];
     const productsNeed = insights.productsNeedThis || [];
     const whereUsed    = insights.whereUsed || insights.useCases || [];
-    const costWrong    = insights.costOfGettingWrong || '';
-    const skillGain    = insights.skillYouGain || '';
-    const prodReality  = insights.productionReality || '';
-    const whyAsk       = insights.whyCompaniesAsk || '';
-    const companies    = insights.companies || [];
-    const analogy      = insights.analogy || '';
 
-    const productItems = productsNeed.map(p =>
-      typeof p === 'object' && p.product
-        ? `<li><strong>${p.product}:</strong> ${p.whyTheNeed}</li>`
-        : `<li>${p}</li>`
-    ).join('') || whereUsed.map(u => `<li>${u}</li>`).join('');
+    // ── Helpers (must be defined before use since they're const, not function) ──
+    // Strip problem title references like '100. Same Tree' from AI text
+    const cleanText = (t) => (t || '')
+      .replace(/'\d+\.\s[^']+'/g, 'this problem')
+      .replace(/"\d+\.\s[^"]+"/g, 'this problem')
+      .replace(/\s{2,}/g, ' ').trim();
 
-    let html = '<div class="ddp-problem-meta"><span class="ddp-diff-badge ddp-diff-' + diffClass + '">' + (insights.difficulty || data.difficulty || 'Unknown') + '</span><span class="ddp-pattern-badge">' + SVG.pulse + ' ' + (insights.pattern || 'General') + '</span></div>';
+    // Remove duplicate sentences in a paragraph
+    const dedup = (t) => {
+      if (!t) return '';
+      const sentences = t.split(/\.\s+/);
+      const seen = new Set();
+      return sentences.filter(s => {
+        const k = s.toLowerCase().slice(0, 55);
+        if (seen.has(k)) return false;
+        seen.add(k); return true;
+      }).join('. ').replace(/\.{2,}/g, '.').trim();
+    };
 
-    if (realWorld)        html += buildCard({ icon: SVG.globe,  iconClass: 'ddp-icon-blue',   label: 'What This Actually Solves',  preview: realWorld.slice(0,62)+'...', content: '<p>'+realWorld+'</p>', open: true });
-    if (productItems)     html += buildCard({ icon: SVG.bag,    iconClass: 'ddp-icon-indigo',  label: 'Products That Need This',    preview: 'Google � Meta � Uber � ...', content: '<ul class="ddp-list">'+productItems+'</ul>' });
-    if (casualCases.length) html += buildCard({ icon: SVG.users, iconClass: 'ddp-icon-green', label: 'In Your Daily Life',         preview: (casualCases[0]||'').slice(0,58)+'...', content: '<div class="ddp-casual-list">'+casualCases.map(function(c){return '<div class="ddp-casual-item">'+c+'</div>';}).join('')+'</div>' });
-    if (costWrong)        html += buildCard({ icon: SVG.warn,   iconClass: 'ddp-icon-red',    label: 'Cost of Getting It Wrong',   preview: costWrong.slice(0,58)+'...', content: '<div class="ddp-warn-box"><p>'+costWrong+'</p></div>' });
-    if (whySolve)         html += buildCard({ icon: SVG.info,   iconClass: 'ddp-icon-blue',   label: 'Why This Matters',           preview: whySolve.slice(0,58)+'...', content: '<p>'+whySolve+'</p>' });
-    if (skillGain)        html += buildCard({ icon: SVG.star,   iconClass: 'ddp-icon-amber',  label: 'Skill You Gain',             preview: skillGain.slice(0,58)+'...', content: '<p>'+skillGain+'</p>' });
-    if (whyAsk)           html += buildCard({ icon: SVG.home,   iconClass: 'ddp-icon-indigo', label: 'Why Companies Ask This',     preview: whyAsk.slice(0,58)+'...', content: '<p>'+whyAsk+'</p>' });
-    if (companies.length) html += buildCard({ icon: SVG.bag,    iconClass: 'ddp-icon-green',  label: 'Companies That Ask',         preview: companies.slice(0,4).join(' � '), content: '<div class="ddp-chips">'+companies.map(function(c){return '<span class="ddp-chip">'+c+'</span>';}).join('')+'</div>' });
-    if (prodReality||analogy) html += buildCard({ icon: SVG.screen, iconClass: 'ddp-icon-purple', label: prodReality ? 'Production Reality' : 'Analogy', preview: (prodReality||analogy).slice(0,58)+'...', content: '<div class="ddp-quote-box"><p>'+(prodReality||analogy)+'</p></div>' });
+    const costWrong   = dedup(cleanText(insights.costOfGettingWrong || ''));
+    const skillGain   = cleanText(insights.skillYouGain || '');
+    const prodReality = dedup(cleanText(insights.productionReality || ''));
+    const whyAsk      = cleanText(insights.whyCompaniesAsk || '');
+    const analogy     = cleanText(insights.analogy || '');
+
+    // Normalise companies — backend sometimes returns a comma string
+    const rawCompanies = insights.companies;
+    const companies = Array.isArray(rawCompanies)
+      ? rawCompanies
+      : typeof rawCompanies === 'string'
+        ? rawCompanies.split(/[:,;]/).map(c => c.replace(/any company[^,]*/i,'').trim()).filter(c => c.length > 1 && c.length < 35)
+        : [];
+
+
+    const productItems = productsNeed.length
+      ? productsNeed.map(p =>
+          typeof p === 'object' && p.product
+            ? `<li><strong>${p.product}:</strong> ${p.whyTheNeed}</li>`
+            : `<li>${p}</li>`
+        ).join('')
+      : whereUsed.map(u => `<li>${u}</li>`).join('');
+
+    // ── Combine the best WHY statement for the hero ──
+    const heroRaw  = realWorld || whySolve || '';
+    const heroText = dedup(cleanText(heroRaw));
+    const heroHeadline = heroText
+      ? heroText.split(/\.\s+/)[0].replace(/\.$/, '').trim()
+      : (data.title || 'Solve This Problem');
+
+    // ── HERO BLOCK — very first thing user sees ──
+    let html = `
+      <div class="ddp-hero">
+        <div class="ddp-hero-tag">Why You Solve This</div>
+        <div class="ddp-hero-headline">${heroHeadline}</div>
+        ${heroText ? `<div class="ddp-hero-body">${heroText}</div>` : ''}
+      </div>`;
+
+    // ── Meta badges row ──
+    html += `<div class="ddp-problem-meta">
+      <span class="ddp-diff-badge ddp-diff-${diffClass}">${insights.difficulty || data.difficulty || 'Unknown'}</span>
+      <span class="ddp-pattern-badge">${SVG.pulse} ${insights.pattern || 'General'}</span>
+    </div>`;
+
+    // ── Remaining sections ──
+
+
+    if (productItems) html += buildSection({
+      tagLabel: 'Products That Need This',
+      body: `<ul class="ddp-section-list">${productItems}</ul>`
+    });
+
+    if (casualCases.length) html += buildSection({
+      tagLabel: 'In Your Daily Life',
+      body: `<div class="ddp-casual-list">${casualCases.map(c => `<div class="ddp-casual-item">${c}</div>`).join('')}</div>`
+    });
+
+    if (costWrong) html += buildSection({
+      tagLabel: 'Cost of Getting It Wrong',
+      heading: costWrong.split('.')[0].trim(),
+      body: `<div class="ddp-section-body">${costWrong}</div>`
+    });
+
+    if (whySolve) html += buildSection({
+      tagLabel: 'Why This Matters',
+      body: `<div class="ddp-section-body">${whySolve}</div>`
+    });
+
+    if (skillGain) html += buildSection({
+      tagLabel: 'Skill You Gain',
+      body: `<div class="ddp-section-body">${skillGain}</div>`
+    });
+
+    if (whyAsk) html += buildSection({
+      tagLabel: 'Why Companies Ask This',
+      body: `<div class="ddp-section-body">${whyAsk}</div>`
+    });
+
+    if (companies.length) html += buildSection({
+      tagLabel: 'Companies That Ask',
+      body: `<div class="ddp-section-chips">${companies.map(c => `<span class="ddp-section-chip">${c}</span>`).join('')}</div>`
+    });
+
+    if (prodReality || analogy) html += buildSection({
+      tagLabel: prodReality ? 'Production Reality' : 'Analogy',
+      body: `<div class="ddp-section-body">${prodReality || analogy}</div>`
+    });
 
     body.innerHTML = html;
-    wireCardToggles(body);
     if (footer) footer.style.display = 'flex';
     document.getElementById('ddp-explain-more')?.addEventListener('click', () => {
       requestDeeperExplanation(data, insights.pattern);
@@ -375,61 +413,65 @@
     });
   }
 
-  // ── STEP 6: Deeper explanation — rendered as a card ──
+  // ── STEP 6: Deeper explanation — flat section appended ──
   function requestDeeperExplanation(data, pattern) {
     document.getElementById('ddp-deeper')?.remove();
     const body = document.getElementById('ddp-body');
     if (!body) return;
 
-    const loadCard = document.createElement('div');
-    loadCard.id = 'ddp-deeper';
-    loadCard.className = 'ddp-card open';
-    loadCard.innerHTML = `
-      <div class="ddp-card-header" style="cursor:default">
-        <div class="ddp-card-header-left">
-          <div class="ddp-card-icon ddp-icon-indigo">${SVG.plus}</div>
-          <span class="ddp-card-label">Deep Dive</span>
-        </div>
-      </div>
-      <div class="ddp-card-body" style="display:block">
-        <div class="ddp-loading" style="padding:16px 0">
-          <div class="ddp-spinner"></div><p>Loading analysis...</p>
-        </div>
+    const loadDiv = document.createElement('div');
+    loadDiv.id = 'ddp-deeper';
+    loadDiv.className = 'ddp-section';
+    loadDiv.innerHTML = `
+      <div class="ddp-section-tag">${SVG.plus} Deep Dive</div>
+      <div class="ddp-loading" style="padding:16px 0;background:transparent">
+        <div class="ddp-spinner"></div><p>Loading analysis...</p>
       </div>`;
-    body.appendChild(loadCard);
-    loadCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    body.appendChild(loadDiv);
+    loadDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
     if (!chrome.runtime?.id) {
-      const deeperEl = document.getElementById('ddp-deeper');
-      if (deeperEl) deeperEl.innerHTML = `<div class="ddp-error-box"><p>Extension reloaded — refresh page to retry.</p></div>`;
+      document.getElementById('ddp-deeper').innerHTML = `<div class="ddp-section-tag">${SVG.plus} Deep Dive</div><div class="ddp-section-body">Extension reloaded — refresh page to retry.</div>`;
       return;
     }
     chrome.runtime.sendMessage(
       { type: 'DEEPER_EXPLANATION', payload: { title: data.title, pattern } },
       (response) => {
         if (chrome.runtime.lastError) {
-          const deeperEl = document.getElementById('ddp-deeper');
-          if (deeperEl) deeperEl.innerHTML = `<div class="ddp-error-box"><p>Extension reloaded — refresh page to retry.</p></div>`;
+          const el = document.getElementById('ddp-deeper');
+          if (el) el.innerHTML = `<div class="ddp-section-tag">${SVG.plus} Deep Dive</div><div class="ddp-section-body">Extension reloaded — refresh page.</div>`;
           return;
         }
-        const deeperEl = document.getElementById('ddp-deeper');
-        if (!deeperEl) return;
-        const cardBody = deeperEl.querySelector('.ddp-card-body');
-        if (!cardBody) return;
+        const el = document.getElementById('ddp-deeper');
+        if (!el) return;
         if (response?.success) {
           const d = response.data;
-          cardBody.innerHTML = `
+
+          // Filter out any backend error/placeholder strings
+          const stale = (v) => !v || /unavailable|temporarily|refresh|retry|AI analysis/i.test(v);
+
+          const timeVal    = stale(d.timeComplexity)        ? null : d.timeComplexity;
+          const spaceVal   = stale(d.spaceComplexity)       ? null : d.spaceComplexity;
+          const sysDesign  = stale(d.systemDesignConnection)? null : d.systemDesignConnection;
+          const mentalMdl  = stale(d.mentalModel)           ? null : d.mentalModel;
+          const edges      = (d.edgeCases      || []).filter(e => !stale(e));
+          const followUps  = (d.followUpProblems || []).filter(p => !stale(p));
+
+          el.innerHTML = `
+            <div class="ddp-section-tag">Deep Dive</div>
+            ${(timeVal || spaceVal) ? `
             <div class="ddp-complexity-row">
-              <div class="ddp-complexity-card"><div class="label">⏱ Time</div><div class="value">${d.timeComplexity || 'N/A'}</div></div>
-              <div class="ddp-complexity-card"><div class="label">💾 Space</div><div class="value">${d.spaceComplexity || 'N/A'}</div></div>
-            </div>
-            ${d.systemDesignConnection ? `<div class="ddp-deep-section"><div class="ddp-section-title">${SVG.screen} System Design</div><p class="ddp-text">${d.systemDesignConnection}</p></div>` : ''}
-            ${(d.edgeCases||[]).length ? `<div class="ddp-deep-section"><div class="ddp-section-title">${SVG.warn} Edge Cases</div><ul class="ddp-list">${d.edgeCases.map(e=>`<li>${e}</li>`).join('')}</ul></div>` : ''}
-            ${(d.followUpProblems||[]).length ? `<div class="ddp-deep-section"><div class="ddp-section-title">${SVG.link} Follow-Ups</div><div class="ddp-chips">${d.followUpProblems.map(p=>`<span class="ddp-chip ddp-chip-blue">${p}</span>`).join('')}</div></div>` : ''}
-            ${d.mentalModel ? `<div class="ddp-deep-section"><div class="ddp-section-title">${SVG.brain} Mental Model</div><div class="ddp-mental-box"><p>${d.mentalModel}</p></div></div>` : ''}
+              ${timeVal  ? `<div class="ddp-complexity-card"><div class="label">Time</div><div class="value">${timeVal}</div></div>`  : ''}
+              ${spaceVal ? `<div class="ddp-complexity-card"><div class="label">Space</div><div class="value">${spaceVal}</div></div>` : ''}
+            </div>` : ''}
+            ${sysDesign ? `<div class="ddp-deep-section"><div class="ddp-section-title-sm">System Design</div><p class="ddp-text">${sysDesign}</p></div>` : ''}
+            ${edges.length ? `<div class="ddp-deep-section"><div class="ddp-section-title-sm">Edge Cases</div><ul class="ddp-section-list">${edges.map(e=>`<li>${e}</li>`).join('')}</ul></div>` : ''}
+            ${followUps.length ? `<div class="ddp-deep-section"><div class="ddp-section-title-sm">Follow-Ups</div><div class="ddp-section-chips">${followUps.map(p=>`<span class="ddp-section-chip">${p}</span>`).join('')}</div></div>` : ''}
+            ${mentalMdl ? `<div class="ddp-deep-section"><div class="ddp-section-title-sm">Mental Model</div><p class="ddp-text" style="font-style:italic;margin-top:4px">${mentalMdl}</p></div>` : ''}
           `;
+
         } else {
-          cardBody.innerHTML = `<div class="ddp-error-box">${SVG.info}<p>Deep analysis unavailable</p></div>`;
+          el.innerHTML = `<div class="ddp-section-tag">${SVG.plus} Deep Dive</div><div class="ddp-section-body">Deep analysis unavailable.</div>`;
         }
       }
     );

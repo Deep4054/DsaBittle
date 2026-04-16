@@ -1,151 +1,137 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DSA Engine</title>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="popup-glass.css" />
 </head>
 <body>
 
   <div class="popup" id="popup-shell">
 
-    <!-- ── HEADER ── -->
+    <!-- HEADER -->
     <header class="header">
       <div class="header-brand">
         <div class="brand-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
-            <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
           </svg>
         </div>
         <div>
           <div class="brand-name">DSA Engine</div>
-          <div class="brand-sub">AI Coaching</div>
+          <div class="brand-sub">AI Coaching · LeetCode</div>
         </div>
       </div>
-      <div class="header-actions">
+      <div class="header-right">
         <div class="level-badge" id="popup-level">Beginner</div>
-        <button class="icon-btn" id="theme-toggle" title="Toggle theme">
-          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        </button>
-        <button class="icon-btn" id="gp-minimize" title="Minimize">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
-        </button>
       </div>
     </header>
 
-    <!-- ── SUBTITLE ── -->
-    <div class="subtitle-bar">
-      <span class="subtitle-dot"></span>
+    <!-- TICKER -->
+    <div class="ticker-bar">
+      <span class="live-dot"></span>
       <span id="popup-subtitle">Loading your progress...</span>
     </div>
 
-    <!-- ── COLLAPSIBLE BODY ── -->
+    <!-- BODY -->
     <div class="body" id="gp-body">
 
       <!-- Loading -->
       <div id="popup-loading" class="loading-state">
         <div class="spinner"></div>
-        <span>Loading stats…</span>
+        <span>Loading stats...</span>
       </div>
 
       <!-- Content -->
       <div id="popup-content" style="display:none">
 
-        <!-- STATS GRID -->
-        <div class="stats-grid">
-          <div class="stat-card accent-green">
-            <div class="stat-label">Solved</div>
-            <div class="stat-num" id="stat-total">0</div>
-            <div class="stat-sub">problems</div>
+        <!-- Hero stat — problems solved -->
+        <div class="hero-stat">
+          <div class="hero-stat-label">Total Solved</div>
+          <div class="hero-stat-num" id="stat-total">0</div>
+          <div class="hero-stat-sub">problems completed</div>
+        </div>
+
+        <!-- Small stats row -->
+        <div class="stats-row">
+          <div class="stat-item">
+            <div class="stat-item-label">Streak</div>
+            <div class="stat-item-num" id="stat-streak">0</div>
+            <div class="stat-item-sub">day streak</div>
           </div>
-          <div class="stat-card accent-orange">
-            <div class="stat-label">Streak</div>
-            <div class="stat-num" id="stat-streak">0</div>
-            <div class="stat-sub">days 🔥</div>
-          </div>
-          <div class="stat-card accent-purple">
-            <div class="stat-label">XP</div>
-            <div class="stat-num" id="stat-xp">0</div>
-            <div class="stat-sub">points</div>
-          </div>
-          <div class="stat-card accent-blue">
-            <div class="stat-label">Today</div>
-            <div class="stat-num" id="stat-today">0</div>
-            <div class="stat-sub">solved</div>
+          <div class="stat-item">
+            <div class="stat-item-label">Today</div>
+            <div class="stat-item-num" id="stat-today">0</div>
+            <div class="stat-item-sub">solved today</div>
           </div>
         </div>
 
-        <!-- XP PROGRESS -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Level Progress</span>
-            <span class="pill" id="xp-bar-next-level">Apprentice</span>
+        <!-- XP Progress -->
+        <div class="popup-section">
+          <div class="popup-section-label">Level Progress</div>
+          <div class="xp-level-tags">
+            <span class="xp-tag" id="xp-bar-current-level">Beginner</span>
+            <span class="xp-arrow">→</span>
+            <span class="xp-tag" id="xp-bar-next-level">Apprentice</span>
           </div>
-          <div class="xp-bar-track">
-            <div class="xp-bar-fill" id="xp-bar-fill" style="width:0%"></div>
+          <div class="xp-track">
+            <div class="xp-fill" id="xp-bar-fill" style="width:0%"></div>
           </div>
-          <div class="xp-bar-labels">
-            <span id="xp-bar-current-level">Beginner</span>
+          <div class="xp-meta">
+            <span id="stat-xp">0 XP</span>
             <span id="xp-pct">0%</span>
           </div>
         </div>
 
-        <!-- DIFFICULTY -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Difficulty Split</span>
-          </div>
+        <!-- Difficulty -->
+        <div class="popup-section">
+          <div class="popup-section-label">Difficulty Split</div>
           <div class="diff-list">
-            <div class="diff-item">
-              <span class="diff-badge easy">Easy</span>
-              <div class="diff-bar-track"><div class="diff-bar-fill easy" id="bar-easy" style="width:0%"></div></div>
+            <div class="diff-item diff-easy">
+              <span class="diff-name">Easy</span>
+              <div class="diff-track"><div class="diff-fill" id="bar-easy" style="width:0%"></div></div>
               <span class="diff-count" id="count-easy">0</span>
             </div>
-            <div class="diff-item">
-              <span class="diff-badge med">Med</span>
-              <div class="diff-bar-track"><div class="diff-bar-fill med" id="bar-medium" style="width:0%"></div></div>
+            <div class="diff-item diff-med">
+              <span class="diff-name">Medium</span>
+              <div class="diff-track"><div class="diff-fill" id="bar-medium" style="width:0%"></div></div>
               <span class="diff-count" id="count-medium">0</span>
             </div>
-            <div class="diff-item">
-              <span class="diff-badge hard">Hard</span>
-              <div class="diff-bar-track"><div class="diff-bar-fill hard" id="bar-hard" style="width:0%"></div></div>
+            <div class="diff-item diff-hard">
+              <span class="diff-name">Hard</span>
+              <div class="diff-track"><div class="diff-fill" id="bar-hard" style="width:0%"></div></div>
               <span class="diff-count" id="count-hard">0</span>
             </div>
           </div>
         </div>
 
-        <!-- RECENT PROBLEMS -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Recent Problems</span>
-          </div>
-          <div id="popup-history-list"></div>
+        <!-- Recent activity -->
+        <div class="popup-section">
+          <div class="popup-section-label">Recent Activity</div>
+          <div class="history-wrap" id="popup-history-list"></div>
         </div>
 
       </div><!-- /popup-content -->
     </div><!-- /body -->
 
-    <!-- ── FOOTER ── -->
+    <!-- FOOTER -->
     <footer class="footer">
-      <button class="footer-btn ghost" id="btn-leetcode">
+      <button class="foot-btn ghost" id="btn-leetcode">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
         LeetCode
       </button>
-      <button class="footer-btn ghost" id="btn-dashboard">
+      <button class="foot-btn ghost" id="btn-dashboard">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
         Dashboard
       </button>
-      <button class="footer-btn primary" id="btn-report">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
+      <button class="foot-btn primary" id="btn-report">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
         AI Report
       </button>
     </footer>
 
-  </div><!-- /popup -->
+  </div>
 
   <div id="popup-toast"></div>
   <script src="popup.js"></script>

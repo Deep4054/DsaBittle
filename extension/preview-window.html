@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>DSA Engine – Window Preview</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body { margin: 0; background: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .lc-header { background: #1A1A1A; padding: 11px 20px; display: flex; align-items: center; gap: 6px; }
+    .lc-header .a { font-weight:900;font-size:15px;color:#FFA116; }
+    .lc-header .b { font-weight:900;font-size:15px;color:#fff; }
+    .lc-header .c { color:rgba(255,255,255,0.3);margin:0 8px; }
+    .lc-header .d { color:rgba(255,255,255,0.5);font-size:12px; }
+    .lc-body { padding: 28px 24px; }
+    .lc-title  { font-size: 19px; font-weight: 700; color: #111; margin-bottom: 10px; }
+    .lc-badge  { display:inline-block; background:rgba(217,119,6,0.1); color:#b45309; font-size:10.5px; font-weight:700; padding:3px 10px; border-radius:20px; border:1.5px solid rgba(180,83,9,0.25); }
+    .lc-desc   { font-size:13.5px; color:rgba(0,0,0,0.5); line-height:1.75; margin-top:16px; max-width:600px; }
+  </style>
+</head>
+<body>
+  <div class="lc-header">
+    <span class="a">leet</span><span class="b">code</span>
+    <span class="c">|</span><span class="d">Problems</span>
+  </div>
+  <div class="lc-body">
+    <div class="lc-title">Longest Substring Without Repeating Characters</div>
+    <span class="lc-badge">Medium</span>
+    <div class="lc-desc">Given a string <code>s</code>, find the length of the longest substring without repeating characters.<br><br><strong>Example:</strong> s = "abcabcbb" → 3</div>
+  </div>
+
+  <!-- DSA ENGINE WINDOW -->
+  <div id="dsa-dopamine-panel">
+
+    <div class="ddp-header">
+      <div class="ddp-header-left">
+        <div class="ddp-logo">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
+        </div>
+        <span class="ddp-title">DSA Engine</span>
+      </div>
+      <div class="ddp-header-right">
+        <div class="ddp-timer ddp-timer-running">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          08:41
+        </div>
+        <button class="ddp-close">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="ddp-body">
+
+      <!-- HERO — first thing visible -->
+      <div class="ddp-hero">
+        <div class="ddp-hero-tag">Why You Solve This</div>
+        <div class="ddp-hero-headline">Powers real-time autocomplete engines that handle 50M requests per second</div>
+        <div class="ddp-hero-body">Every time you type in Google Search, Spotify autocomplete, or Uber's ETA box — this exact pattern runs. Without sliding window, you'd need O(n²) which crashes at production scale. This is how you build systems people actually use.</div>
+      </div>
+
+      <!-- Meta badges -->
+      <div class="ddp-problem-meta">
+        <span class="ddp-diff-badge ddp-diff-medium">Medium</span>
+        <span class="ddp-pattern-badge">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Sliding Window
+        </span>
+      </div>
+
+      <div class="ddp-section">
+        <div class="ddp-section-tag">Products That Need This</div>
+        <ul class="ddp-section-list">
+          <li><strong>Google Search:</strong> Real-time spell check as you type in the search bar</li>
+          <li><strong>Spotify:</strong> Deduplicating tracks in smart radio playlists without full scan</li>
+          <li><strong>Uber:</strong> Detecting repeated route segments to avoid navigation loops</li>
+        </ul>
+      </div>
+
+      <div class="ddp-section">
+        <div class="ddp-section-tag">In Your Daily Life</div>
+        <div class="ddp-casual-list">
+          <div class="ddp-casual-item">When your keyboard's autocorrect scans what you're typing without re-reading the whole message</div>
+          <div class="ddp-casual-item">A music app detecting if you've heard a song in your recent 30-track history without starting over</div>
+        </div>
+      </div>
+
+      <div class="ddp-section">
+        <div class="ddp-section-tag">Cost of Getting It Wrong</div>
+        <div class="ddp-section-heading">Naïve O(n²) crashes at 10M+ character scale</div>
+        <div class="ddp-section-body">At that scale — genome sequencing, server log analysis — a brute-force approach can take down production services used by millions. This mistake has happened at real companies.</div>
+      </div>
+
+      <div class="ddp-section">
+        <div class="ddp-section-tag">Skill You Gain</div>
+        <div class="ddp-section-body">Strong two-pointer and hash map intuition. This is the #1 gap between junior and mid-level engineers — mastering this pattern unlocks ~30% of all FAANG interview questions.</div>
+      </div>
+
+      <div class="ddp-section">
+        <div class="ddp-section-tag">Why Companies Ask This</div>
+        <div class="ddp-section-body">Tests whether you can optimise from brute force to O(n) using a hash map. A core signal for how you'll handle large-scale data in real backend roles.</div>
+      </div>
+
+      <div class="ddp-section">
+        <div class="ddp-section-tag">Companies That Ask</div>
+        <div class="ddp-section-chips">
+          <span class="ddp-section-chip">Google</span>
+          <span class="ddp-section-chip">Amazon</span>
+          <span class="ddp-section-chip">Meta</span>
+          <span class="ddp-section-chip">Microsoft</span>
+          <span class="ddp-section-chip">Apple</span>
+          <span class="ddp-section-chip">Uber</span>
+          <span class="ddp-section-chip">LinkedIn</span>
+        </div>
+      </div>
+
+      <div class="ddp-section">
+        <div class="ddp-section-tag">Production Reality</div>
+        <div class="ddp-section-body">At Cloudflare, this exact logic processes 50M+ log events per second for anomaly detection. At that scale, O(n²) would be a company-ending bug.</div>
+      </div>
+
+    </div>
+
+    <div class="ddp-footer">
+      <button class="ddp-btn ddp-btn-timer running">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+        Pause
+      </button>
+      <button class="ddp-btn ddp-btn-secondary">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Deep Dive
+      </button>
+      <button class="ddp-btn ddp-btn-success">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Mark Solved
+      </button>
+    </div>
+
+  </div>
+
+  <button id="ddp-toggle-btn">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
+  </button>
+
+</body>
+</html>
