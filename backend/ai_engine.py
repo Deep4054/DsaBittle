@@ -27,9 +27,9 @@ FAST_MODEL  = "meta/llama-3.1-8b-instruct"
 POWER_MODEL = "meta/llama-3.3-70b-instruct"
 
 
-# ─────────────────────────────────────────────
-# MAIN PROMPT — ChatGPT casual, honest, no template
-# ─────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# MAIN PROMPT â€” ChatGPT casual, honest, no template
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 ANALYZE_PROMPT = """You're explaining this problem to your friend who is coding with you.
 
@@ -37,28 +37,28 @@ Problem: "{title}"
 Tags: {tags}
 Description: {description}
 
-Your goal: Make the user say — "haan bhai ab samajh aaya ye kyun kar rahe hai"
+Your goal: Make the user say â€” "haan bhai ab samajh aaya ye kyun kar rahe hai"
 
 STRICT RULES:
-- Talk ONLY about THIS problem (not generic patterns)
-- Give REAL developer scenario (API, DB, frontend, logs, etc.)
+- Talk ONLY about THIS specific problem behavior, not the general pattern
+- "realUse" MUST be tied to what THIS problem actually does â€” not just "hash maps are used everywhere"
 - NO lines like "used in many systems", "general computation"
 - NO fake scale drama (1M users, SLA) unless truly needed
-- Keep it simple, practical, grounded
 - Tone: like explaining to your friend (casual, direct)
 
 Return ONLY JSON:
 {{
-  "whatIsThis": "Explain simply what we're doing here and why this even exists.",
-  "realUse": "REAL dev use case. Example: backend to frontend mismatch, API rename, data cleaning, etc.",
-  "whyThisApproach": "Why THIS method is used instead of something else. What makes it correct here?",
-  "whatBreaks": "What exactly goes wrong in real code if you mess this up.",
+  "whatIsThis": "Explain simply what we're doing in THIS problem and why it exists.",
+  "realUse": "REAL scenario tied to THIS problem's exact behavior. Not the pattern â€” THIS problem.",
+  "whyThisApproach": "Why THIS method over alternatives. What makes it correct here specifically.",
+  "whatBreaks": "What exactly goes wrong in real code if you mess THIS up.",
+  "intuitionShift": "One line â€” the trick that changes brute force to optimal. What clicks in your head.",
   "pattern": "Short name",
   "difficulty": "{difficulty}"
 }}"""
 
 
-DEEPER_PROMPT = """Same vibe — casual dev explaining to another dev.
+DEEPER_PROMPT = """Same vibe â€” casual dev explaining to another dev.
 
 Problem: "{title}"
 Pattern: {pattern}
@@ -92,15 +92,15 @@ Return ONLY valid JSON:
   "strongTopics": ["Most-solved topic", "Second", "Third if applicable"],
   "weakTopics": ["Least practiced", "Second weakest", "Third if applicable"],
   "insight": "One specific data-driven observation about their practice pattern.",
-  "recommendation": "Specific next step — what to practice and why.",
+  "recommendation": "Specific next step â€” what to practice and why.",
   "motivationalMessage": "Short, genuine, references something specific from their data.",
   "predictedLevel": "Beginner / Apprentice / Intermediate / Advanced / Expert"
 }}"""
 
 
-# ─────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # JSON PARSER
-# ─────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def parse_json_response(raw: str) -> dict:
     raw = raw.strip()
@@ -123,9 +123,9 @@ def parse_json_response(raw: str) -> dict:
     raise ValueError(f"Could not parse JSON. Raw (first 300): {raw[:300]}")
 
 
-# ─────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # AI FUNCTIONS
-# ─────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async def analyze_problem(data: ProblemInput) -> dict:
     tags_str = ", ".join(data.tags) if data.tags else "none"
@@ -155,7 +155,7 @@ async def analyze_problem(data: ProblemInput) -> dict:
         return parse_json_response(raw)
 
     except Exception as e:
-        logger.warning(f"analyze_problem failed ({type(e).__name__}: {e}) — returning fallback")
+        logger.warning(f"analyze_problem failed ({type(e).__name__}: {e}) â€” returning fallback")
         return _fallback_analysis(data)
 
 
@@ -179,10 +179,10 @@ async def get_deeper_explanation(title: str, pattern: str) -> dict:
         return parse_json_response(raw)
 
     except Exception as e:
-        logger.warning(f"get_deeper_explanation failed ({type(e).__name__}: {e}) — returning fallback")
+        logger.warning(f"get_deeper_explanation failed ({type(e).__name__}: {e}) â€” returning fallback")
         return {
-            "timeComplexity": "Unavailable — try again",
-            "spaceComplexity": "Unavailable — try again",
+            "timeComplexity": "Unavailable â€” try again",
+            "spaceComplexity": "Unavailable â€” try again",
             "systemDesignConnection": "AI temporarily unavailable. Refresh to retry.",
             "edgeCases": ["Empty input", "Single element", "Maximum constraint value"],
             "followUpProblems": ["Related problem on LeetCode"],
@@ -239,23 +239,23 @@ async def generate_daily_report(history: list, stats: dict) -> dict:
         return parse_json_response(raw)
 
     except Exception as e:
-        logger.warning(f"generate_daily_report failed ({type(e).__name__}: {e}) — returning fallback")
+        logger.warning(f"generate_daily_report failed ({type(e).__name__}: {e}) â€” returning fallback")
         total = stats_summary["totalSolved"]
         streak = stats_summary["streak"]
         return {
             "overallAssessment": f"You've solved {total} problems with a {streak}-day streak. Keep going.",
             "strongTopics": ["Array", "String", "Hash Map"],
             "weakTopics": ["Dynamic Programming", "Graph", "Tree"],
-            "insight": "Consistency beats intensity — your streak shows you're building the habit.",
+            "insight": "Consistency beats intensity â€” your streak shows you're building the habit.",
             "recommendation": "Try one medium problem per day in your weakest topic.",
-            "motivationalMessage": f"{streak} day streak — that's real discipline.",
+            "motivationalMessage": f"{streak} day streak â€” that's real discipline.",
             "predictedLevel": stats_summary.get("level", "Beginner"),
         }
 
 
-# ─────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # HELPERS
-# ─────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _get_top_tags(tag_stats: dict, n: int = 3) -> list:
     sorted_tags = sorted(tag_stats.items(), key=lambda x: x[1].get("count", 0), reverse=True)
@@ -284,6 +284,7 @@ def _fallback_analysis(data: ProblemInput) -> dict:
             "realUse": "Suppose your backend API sends 'first' and 'last', but your frontend or analytics expects 'first_name' and 'last_name'. You rename columns once so everything downstream works without breaking.",
             "whyThisApproach": "Direct renaming is clean and constant time. Alternative would be copying data or manually mapping everywhere, which is messy and error-prone.",
             "whatBreaks": "Wrong column names means your UI shows blank data, filters stop working, or joins fail silently. Debugging becomes painful because data exists but names don't match.",
+            "intuitionShift": "You're not changing data, just the label. Like renaming a variable — same value, different name.",
         }
 
     # Binary search
@@ -292,9 +293,10 @@ def _fallback_analysis(data: ProblemInput) -> dict:
             "pattern": "Binary Search",
             "difficulty": data.difficulty or "Medium",
             "whatIsThis": "You're cutting the search space in half each step instead of checking everything linearly.",
-            "realUse": "Git bisect uses this to find which commit broke your build. Database indexes use it to find rows fast. Any sorted list lookup — package tracking, version history, finding thresholds.",
+            "realUse": "Git bisect uses this to find which commit broke your build. Database indexes use it to find rows fast. Any sorted list lookup â€” package tracking, version history, finding thresholds.",
             "whyThisApproach": "On sorted data, binary search is O(log n) vs O(n) linear scan. That's 20 steps vs 1 million steps for a million items.",
             "whatBreaks": "Off-by-one errors cause subtle bugs that only appear at boundaries. Easy to miss in testing, shows up in production.",
+            "intuitionShift": "Don't scan everything — the array is sorted, so you already know which half to throw away.",
         }
 
     # Hash table
@@ -302,10 +304,10 @@ def _fallback_analysis(data: ProblemInput) -> dict:
         return {
             "pattern": "Hash Map Lookup",
             "difficulty": data.difficulty or "Easy",
-            "whatIsThis": "You're trading memory for speed — store what you've seen so you can check it in O(1) instead of scanning again.",
-            "realUse": "Checking if a user already exists, finding duplicate transactions, looking up config values — all hash maps under the hood. Session management, caching, deduplication.",
-            "whyThisApproach": "Hash map gives O(1) lookup. Alternative is nested loop which is O(n²) — fine for 100 items, kills performance at 10K+.",
-            "whatBreaks": "Naive O(n²) solution works fine in testing with small inputs, falls apart in production with real data volume. That's when it becomes a latency incident.",
+            "whatIsThis": "You're trading memory for speed â€” store what you've seen so you can check it in O(1) instead of scanning again.",
+            "realUse": "Checking if a user already exists, finding duplicate transactions, looking up config values â€” all hash maps under the hood. Session management, caching, deduplication.",
+            "whyThisApproach": "Hash map gives O(1) lookup. Alternative is nested loop which is O(nÂ²) â€” fine for 100 items, kills performance at 10K+.",
+            "whatBreaks": "Naive O(nÂ²) solution works fine in testing with small inputs, falls apart in production with real data volume. That's when it becomes a latency incident.",
         }
 
     # Two pointers / sliding window
@@ -313,10 +315,11 @@ def _fallback_analysis(data: ProblemInput) -> dict:
         return {
             "pattern": "Two Pointers" if "two pointers" in tags else "Sliding Window",
             "difficulty": data.difficulty or "Medium",
-            "whatIsThis": "You're using two indices to avoid nested loops — one pass instead of checking every pair.",
+            "whatIsThis": "You're using two indices to avoid nested loops â€” one pass instead of checking every pair.",
             "realUse": "Rate limiting windows, finding subarrays in streaming data, deduplication in sorted lists. Anywhere you need to track a range or window of elements.",
-            "whyThisApproach": "Single pass O(n) vs nested loop O(n²). Makes the difference between responsive and slow when data size grows.",
+            "whyThisApproach": "Single pass O(n) vs nested loop O(nÂ²). Makes the difference between responsive and slow when data size grows.",
             "whatBreaks": "Nested loop alternative works on small inputs, kills performance at scale. Also easy to get pointer logic wrong and miss edge cases.",
+            "intuitionShift": "Don't restart when you hit a problem — just shrink the window from the left.",
         }
 
     # Dynamic programming
@@ -324,18 +327,18 @@ def _fallback_analysis(data: ProblemInput) -> dict:
         return {
             "pattern": "Dynamic Programming",
             "difficulty": data.difficulty or "Medium",
-            "whatIsThis": "You're caching subproblem results so you don't recompute them — memoization to avoid exponential blowup.",
+            "whatIsThis": "You're caching subproblem results so you don't recompute them â€” memoization to avoid exponential blowup.",
             "realUse": "Cost optimization, resource allocation, autocomplete suggestions, spell checkers. Anywhere you have overlapping subproblems.",
             "whyThisApproach": "Memoization turns exponential time into polynomial. Without it, recursive solution crashes on inputs larger than 20-30.",
-            "whatBreaks": "Recursive solution without memoization hits exponential time — works on tiny inputs in testing, times out or crashes on real data.",
+            "whatBreaks": "Recursive solution without memoization hits exponential time â€” works on tiny inputs in testing, times out or crashes on real data.",
         }
 
-    # Generic fallback — still honest
+    # Generic fallback â€” still honest
     return {
         "pattern": "Data Transformation",
         "difficulty": data.difficulty or "Unknown",
         "whatIsThis": f"This problem is about transforming data into the format you actually need before using it.",
         "realUse": "In real code, raw data rarely matches your expected format. You often need to rename, filter, or reshape it before using it in APIs, UI, or analytics.",
         "whyThisApproach": "Doing transformation once upfront keeps the rest of your code clean and consistent. Alternative is handling mismatches everywhere.",
-        "whatBreaks": "If you skip this, you end up with mismatched data causing silent bugs — UI shows blanks, joins fail, filters break.",
+        "whatBreaks": "If you skip this, you end up with mismatched data causing silent bugs â€” UI shows blanks, joins fail, filters break.",
     }

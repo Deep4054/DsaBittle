@@ -290,11 +290,12 @@
     const diffClass = (insights.difficulty || data.difficulty || 'unknown').toLowerCase();
     const pattern   = insights.pattern || '';
 
-    // 4-field schema
+    // 4-field schema + intuitionShift
     const whatIsThis      = insights.whatIsThis      || insights.realWorldStory || insights.problemSolves || '';
     const realUse         = insights.realUse         || insights.casualUseCase  || insights.whySolveIt   || '';
     const whyThisApproach = insights.whyThisApproach || '';
     const whatBreaks      = insights.whatBreaks      || insights.whyItHurts     || insights.costOfGettingWrong || '';
+    const intuitionShift  = insights.intuitionShift  || '';
 
     let html = `<div class="ddp-meta-row">
       <span class="ddp-diff-badge ddp-diff-${diffClass}">${insights.difficulty || data.difficulty || 'Unknown'}</span>
@@ -330,6 +331,13 @@
         <span class="ddp-section-pill">IF YOU MESS THIS UP</span>
         <div class="ddp-section-title">${whatBreaks.split('.')[0]}.</div>
         <p class="ddp-section-body">${whatBreaks}</p>
+      </div>`;
+    }
+
+    if (intuitionShift) {
+      html += `<div class="ddp-intuition">
+        <span class="ddp-intuition-label">THE CLICK</span>
+        <p class="ddp-intuition-text">${intuitionShift}</p>
       </div>`;
     }
 
