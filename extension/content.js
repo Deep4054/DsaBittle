@@ -353,40 +353,53 @@
         if (response?.success) {
           const d = response.data;
           deeperEl.innerHTML = `
-            <div class="ddp-section-title">
+            <div class="ddp-section-title" style="margin-bottom:10px">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              Deep Dive
+              Deep Dive Analysis
             </div>
-            <div class="ddp-deeper-grid">
-              <div class="ddp-deeper-item">
-                <strong>Time</strong>
-                <span>${d.timeComplexity||'N/A'}</span>
+
+            <div class="ddp-complexity-row">
+              <div class="ddp-complexity-card">
+                <div class="label">⏱ Time</div>
+                <div class="value">${d.timeComplexity || 'N/A'}</div>
               </div>
-              <div class="ddp-deeper-item">
-                <strong>Space</strong>
-                <span>${d.spaceComplexity||'N/A'}</span>
+              <div class="ddp-complexity-card">
+                <div class="label">💾 Space</div>
+                <div class="value">${d.spaceComplexity || 'N/A'}</div>
               </div>
             </div>
-            <div class="ddp-section-title" style="margin-top:10px">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-              System Design Link
+
+            <div class="ddp-section" style="padding:0 0 10px">
+              <div class="ddp-section-title" style="margin-bottom:6px">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                System Design Link
+              </div>
+              <p class="ddp-text">${d.systemDesignConnection || ''}</p>
             </div>
-            <p class="ddp-text">${d.systemDesignConnection||''}</p>
-            <div class="ddp-section-title" style="margin-top:10px">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
-              Edge Cases
+
+            <div class="ddp-section" style="padding:0 0 10px">
+              <div class="ddp-section-title" style="margin-bottom:6px">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                Edge Cases to Watch
+              </div>
+              <ul class="ddp-list">${(d.edgeCases || []).map(e => `<li>${e}</li>`).join('')}</ul>
             </div>
-            <ul class="ddp-list">${(d.edgeCases||[]).map(e=>`<li>${e}</li>`).join('')}</ul>
-            <div class="ddp-section-title" style="margin-top:10px">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
-              Related Problems
+
+            <div class="ddp-section" style="padding:0 0 10px; border:none">
+              <div class="ddp-section-title" style="margin-bottom:6px">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+                Follow-Up Problems
+              </div>
+              <div class="ddp-chips">${(d.followUpProblems || []).map(p => `<span class="ddp-chip ddp-chip-blue">${p}</span>`).join('')}</div>
             </div>
-            <div class="ddp-chips">${(d.followUpProblems||[]).map(p=>`<span class="ddp-chip ddp-chip-blue">${p}</span>`).join('')}</div>
-            <div class="ddp-section-title" style="margin-top:10px">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
-              Mental Model
+
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:11px 12px;margin-top:4px">
+              <div class="ddp-section-title" style="margin-bottom:6px">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42"/></svg>
+                Mental Model
+              </div>
+              <p class="ddp-text" style="font-style:italic;color:rgba(255,255,255,0.58)">${d.mentalModel || ''}</p>
             </div>
-            <p class="ddp-text">${d.mentalModel||''}</p>
           `;
         } else {
           deeperEl.innerHTML = `<div class="ddp-error-box"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><p>Deep analysis unavailable</p></div>`;

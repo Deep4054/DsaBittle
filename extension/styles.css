@@ -3,55 +3,55 @@
    Injected into LeetCode pages via content_scripts
    ================================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 /* ── Design Tokens ── */
 :root {
-  --font:       'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font:       'Inter', system-ui, -apple-system, sans-serif;
   --mono:       'JetBrains Mono', monospace;
 
-  /* Glass palette */
-  --glass-1:    rgba(12, 12, 20, 0.72);
-  --glass-2:    rgba(18, 18, 28, 0.82);
-  --glass-3:    rgba(255, 255, 255, 0.05);
-  --glass-4:    rgba(255, 255, 255, 0.09);
+  /* TRUE glass — dark tinted, high blur for LeetCode page bleed-through */
+  --glass-1:    rgba(7, 6, 18, 0.48);
+  --glass-2:    rgba(10, 9, 24, 0.62);
+  --glass-3:    rgba(255, 255, 255, 0.04);
+  --glass-4:    rgba(255, 255, 255, 0.07);
 
   /* Borders */
-  --border-1:   rgba(255, 255, 255, 0.10);
-  --border-2:   rgba(255, 255, 255, 0.18);
-  --border-3:   rgba(255, 255, 255, 0.05);
+  --border-1:   rgba(255, 255, 255, 0.09);
+  --border-2:   rgba(255, 255, 255, 0.16);
+  --border-3:   rgba(255, 255, 255, 0.04);
 
   /* Text */
-  --text:       rgba(255, 255, 255, 0.95);
-  --text-2:     rgba(255, 255, 255, 0.65);
-  --text-3:     rgba(255, 255, 255, 0.38);
-  --text-muted: rgba(255, 255, 255, 0.25);
+  --text:       rgba(255, 255, 255, 0.92);
+  --text-2:     rgba(255, 255, 255, 0.58);
+  --text-3:     rgba(255, 255, 255, 0.30);
+  --text-muted: rgba(255, 255, 255, 0.20);
 
-  /* Accent – neutral white-based, no green */
-  --accent:      rgba(255, 255, 255, 0.8);
-  --accent-soft: rgba(255, 255, 255, 0.07);
+  /* Accent — neutral */
+  --accent:      rgba(255, 255, 255, 0.75);
+  --accent-soft: rgba(255, 255, 255, 0.06);
 
-  /* Status colours (kept for difficulty badges only) */
+  /* Status colours */
   --green:      #4ade80;
-  --green-soft: rgba(74, 222, 128, 0.12);
+  --green-soft: rgba(74, 222, 128, 0.11);
   --yellow:     #fbbf24;
-  --yellow-soft:rgba(251, 191, 36, 0.12);
+  --yellow-soft:rgba(251, 191, 36, 0.11);
   --red:        #f87171;
-  --red-soft:   rgba(248, 113, 113, 0.12);
+  --red-soft:   rgba(248, 113, 113, 0.11);
   --blue:       #60a5fa;
-  --blue-soft:  rgba(96, 165, 250, 0.12);
+  --blue-soft:  rgba(96, 165, 250, 0.11);
   --purple:     #a78bfa;
   --orange:     #fb923c;
 
-  --blur:       blur(28px) saturate(180%);
-  --blur-light: blur(14px);
-  --shadow:     0 24px 64px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255,255,255,0.12);
-  --shadow-hover: 0 32px 80px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.14);
+  --blur:       blur(36px) saturate(200%) brightness(1.06);
+  --blur-light: blur(16px);
+  --shadow:     0 24px 72px rgba(0,0,0,0.80), 0 0 0 1px rgba(255,255,255,0.07), inset 0 1px 0 rgba(255,255,255,0.11);
+  --shadow-drag: 0 40px 100px rgba(0,0,0,0.90), 0 0 0 1px rgba(255,255,255,0.12);
 
-  --panel-w:    300px;
-  --radius:     16px;
-  --radius-sm:  10px;
-  --radius-xs:  6px;
+  --panel-w:    310px;
+  --radius:     18px;
+  --radius-sm:  11px;
+  --radius-xs:  7px;
   --z:          999999;
 }
 
@@ -60,13 +60,15 @@
    ================================================================ */
 #dsa-dopamine-panel {
   position: fixed;
-  top: 72px;
-  right: 18px;
+  top: 72px; right: 18px;
   width: var(--panel-w);
   max-height: calc(100vh - 90px);
+
+  /* TRUE GLASS — let LeetCode page bleed through */
   background: var(--glass-1);
   backdrop-filter: var(--blur);
   -webkit-backdrop-filter: var(--blur);
+
   border: 1px solid var(--border-1);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
@@ -74,10 +76,9 @@
   font-size: 13px;
   color: var(--text);
   z-index: var(--z);
-  display: flex;
-  flex-direction: column;
+  display: flex; flex-direction: column;
   overflow: hidden;
-  animation: panelIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: panelIn 0.38s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
 }
 
@@ -316,11 +317,37 @@
   line-height: 1.65; color: rgba(255,255,255,0.6); margin: 0;
 }
 
-/* Deep dive */
+/* ================================================================
+   DEEP DIVE SECTION — Premium redesign
+   ================================================================ */
 .ddp-deeper-loading {
-  display: flex; align-items: center;
-  padding: 10px 0; color: var(--text-muted); font-size: 12px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 0; color: var(--text-muted); font-size: 12px; font-weight: 500;
 }
+
+/* Complexity row */
+.ddp-complexity-row {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 8px; margin-bottom: 10px;
+}
+.ddp-complexity-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+.ddp-complexity-card .label {
+  font-size: 8.5px; font-weight: 700;
+  color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px;
+  margin-bottom: 5px;
+}
+.ddp-complexity-card .value {
+  font-size: 13px; font-weight: 700;
+  color: rgba(255,255,255,0.85);
+  font-family: var(--mono); letter-spacing: -0.3px;
+}
+
+/* Legacy support */
 .ddp-deeper-grid {
   display: grid; grid-template-columns: 1fr 1fr;
   gap: 7px; margin-bottom: 10px;
@@ -333,10 +360,10 @@
   display: flex; flex-direction: column; gap: 4px;
 }
 .ddp-deeper-item strong {
-  font-size: 9px; font-weight: 700;
-  color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px;
+  font-size: 8.5px; font-weight: 700;
+  color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.7px;
 }
-.ddp-deeper-item span { font-size: 12px; color: rgba(255,255,255,0.75); font-weight: 600; }
+.ddp-deeper-item span { font-size: 12px; color: rgba(255,255,255,0.78); font-weight: 650; font-family: var(--mono); }
 
 /* Error */
 .ddp-error-box {
