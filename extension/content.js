@@ -281,202 +281,184 @@
       }
     );
   }
-
-  // ── STEP 5: Render AI insights as flat Flamingo-style sections ──
+  // ── STEP 5: Render AI insights — 3 sections only ──
   function renderInsights(insights, data) {
     const body   = document.getElementById('ddp-body');
     const footer = document.getElementById('ddp-footer');
-
     if (!body) return;
 
-    const diffClass    = (insights.difficulty || data.difficulty || 'unknown').toLowerCase();
-    const whySolve     = insights.whySolveThis || insights.whyMatters || insights.whyThisProblemMatters || '';
-    const realWorld    = insights.realWorldConnection || insights.problemSolves || '';
-    const casualCases  = insights.casualUseCases || [];
-    const productsNeed = insights.productsNeedThis || [];
-    const whereUsed    = insights.whereUsed || insights.useCases || [];
-
     // ── Helpers ──
-    // Strip ANY quoted title like 'Nested Lists' or '100. Same Tree' from AI text
     const cleanText = (t) => (t || '')
-      .replace(/'[^']{2,40}'/g, 'this problem')   // any 'Quoted Title'
-      .replace(/"[^"]{2,40}"/g, 'this problem')   // any "Quoted Title"
+      .replace(/'[^']{2,40}'/g, 'this problem')
+      .replace(/"[^"]{2,40}"/g, 'this problem')
       .replace(/\s{2,}/g, ' ').trim();
 
-    // Remove duplicate sentences (handles both \n duplicates and . split dupes)
     const dedup = (t) => {
       if (!t) return '';
-      // First collapse newline duplicates
       const lines = t.split(/\n/).map(l => l.trim()).filter(Boolean);
-      const uniqLines = [...new Set(lines)];
-      const joined = uniqLines.join(' ');
-      // Then deduplicate by sentence
-      const sentences = joined.split(/\.\s+/);
+      const joined = [...new Set(lines)].join(' ');
       const seen = new Set();
-      return sentences.filter(s => {
+      return joined.split(/\.\s+/).filter(s => {
         const k = s.toLowerCase().replace(/\s+/g, ' ').slice(0, 55);
         if (seen.has(k)) return false;
         seen.add(k); return true;
       }).join('. ').replace(/\.{2,}/g, '.').trim();
     };
 
-    const costWrong   = dedup(cleanText(insights.costOfGettingWrong || ''));
-    const skillGain   = cleanText(insights.skillYouGain || '');
-    const prodReality = dedup(cleanText(insights.productionReality || ''));
-    const whyAsk      = cleanText(insights.whyCompaniesAsk || '');
-    const analogy     = cleanText(insights.analogy || '');
+    const clean = (f) => dedup(cleanText(f || ''));
 
-    // Normalise companies — backend sometimes returns a comma string
-    const rawCompanies = insights.companies;
-    const companies = Array.isArray(rawCompanies)
-      ? rawCompanies
-      : typeof rawCompanies === 'string'
-        ? rawCompanies.split(/[:,;]/).map(c => c.replace(/any company[^,]*/i,'').trim()).filter(c => c.length > 1 && c.length < 35)
+    // ── Extract fields ──
+    const realWorld  = clean(insights.realWorldConnection || insights.problemSolves || '');
+    const whySolve   = clean(insights.whySolveThis || insights.whyMatters || '');
+    const casual     = (insights.casualUseCases || []).map(c => cleanText(c)).filter(Boolean);
+    const prodReal   = clean(insights.productionReality || '');
+    const whyAsk     = clean(insights.whyCompaniesAsk || '');
+    const costWrong  = clean(insights.costOfGettingWrong || '');
+    const skillGain  = clean(insights.skillYouGain || '');
+
+    // Normalize companies (string or array)
+    const rawCo = insights.companies;
+    const companies = Array.isArray(rawCo)
+      ? rawCo.map(c => cleanText(c)).filter(Boolean)
+      : typeof rawCo === 'string'
+        ? rawCo.split(/[:,;]/).map(c => c.replace(/any company[^,]*/i,'').trim()).filter(c => c.length > 1 && c.length < 35)
         : [];
 
+    // ── Section 1 (amber): Real-life use case ──
+    const sec1Text = realWorld || whySolve || '';
+    const sec1Head = sec1Text.split(/\.\s+/)[0].replace(/\.$/,'').trim();
 
-    const productItems = productsNeed.length
-      ? productsNeed.map(p =>
-          typeof p === 'object' && p.product
-            ? `<li><strong>${p.product}:</strong> ${p.whyTheNeed}</li>`
-            : `<li>${p}</li>`
-        ).join('')
-      : whereUsed.map(u => `<li>${u}</li>`).join('');
+    // ── Section 2 (sage): Why you need this ──
+    // Pick the best plain-language explanation
+    const sec2Parts = [];
+    if (casual.length) sec2Parts.push(casual.join(' '));
+    else if (whySolve && whySolve !== sec1Text) sec2Parts.push(whySolve);
+    const sec2Text = sec2Parts.join(' ').trim();
 
-    // ── Combine the best WHY statement for the hero ──
-    const heroRaw  = realWorld || whySolve || '';
-    const heroText = dedup(cleanText(heroRaw));
-    const heroHeadline = heroText
-      ? heroText.split(/\.\s+/)[0].replace(/\.$/, '').trim()
-      : (data.title || 'Solve This Problem');
+    // ── Section 3 (lavender): Companies & prod usage ──
+    const sec3Extra = prodReal || whyAsk || '';
 
-    // ── HERO BLOCK — very first thing user sees ──
-    let html = `
-      <div class="ddp-hero">
-        <div class="ddp-hero-tag">Why You Solve This</div>
-        <div class="ddp-hero-headline">${heroHeadline}</div>
-        ${heroText ? `<div class="ddp-hero-body">${heroText}</div>` : ''}
-      </div>`;
+    let html = '';
 
-    // ── Meta badges row ──
-    html += `<div class="ddp-problem-meta">
-      <span class="ddp-diff-badge ddp-diff-${diffClass}">${insights.difficulty || data.difficulty || 'Unknown'}</span>
-      <span class="ddp-pattern-badge">${SVG.pulse} ${insights.pattern || 'General'}</span>
-    </div>`;
+    // SECTION 1
+    if (sec1Text) {
+      html += `
+        <div class="ddp-sec-1">
+          <span class="ddp-sec-label">Real-World Use Case</span>
+          <div class="ddp-sec-headline">${sec1Head}</div>
+          <p class="ddp-sec-body">${sec1Text}</p>
+        </div>`;
+    }
 
-    // ── Remaining sections ──
+    // SECTION 2
+    if (sec2Text) {
+      html += `
+        <div class="ddp-sec-2">
+          <span class="ddp-sec-label">Why You Need This</span>
+          <p class="ddp-sec-body">${sec2Text}</p>
+        </div>`;
+    }
 
+    // SECTION 3
+    if (companies.length || sec3Extra) {
+      html += `
+        <div class="ddp-sec-3">
+          <span class="ddp-sec-label">Who Uses This</span>
+          ${sec3Extra ? `<p class="ddp-sec-body" style="margin-bottom:10px">${sec3Extra}</p>` : ''}
+          ${companies.length ? `<div class="ddp-chips">${companies.map(c => `<span class="ddp-chip">${c}</span>`).join('')}</div>` : ''}
+        </div>`;
+    }
 
-    if (productItems) html += buildSection({
-      tagLabel: 'Products That Need This',
-      body: `<ul class="ddp-section-list">${productItems}</ul>`
-    });
-
-    if (casualCases.length) html += buildSection({
-      tagLabel: 'In Your Daily Life',
-      body: `<div class="ddp-casual-list">${casualCases.map(c => `<div class="ddp-casual-item">${c}</div>`).join('')}</div>`
-    });
-
-    if (costWrong) html += buildSection({
-      tagLabel: 'Cost of Getting It Wrong',
-      heading: costWrong.split('.')[0].trim(),
-      body: `<div class="ddp-section-body">${costWrong}</div>`
-    });
-
-    if (whySolve) html += buildSection({
-      tagLabel: 'Why This Matters',
-      body: `<div class="ddp-section-body">${whySolve}</div>`
-    });
-
-    if (skillGain) html += buildSection({
-      tagLabel: 'Skill You Gain',
-      body: `<div class="ddp-section-body">${skillGain}</div>`
-    });
-
-    if (whyAsk) html += buildSection({
-      tagLabel: 'Why Companies Ask This',
-      body: `<div class="ddp-section-body">${whyAsk}</div>`
-    });
-
-    if (companies.length) html += buildSection({
-      tagLabel: 'Companies That Ask',
-      body: `<div class="ddp-section-chips">${companies.map(c => `<span class="ddp-section-chip">${c}</span>`).join('')}</div>`
-    });
-
-    if (prodReality || analogy) html += buildSection({
-      tagLabel: prodReality ? 'Production Reality' : 'Analogy',
-      body: `<div class="ddp-section-body">${prodReality || analogy}</div>`
-    });
+    if (!html) {
+      html = `<div class="ddp-ai-error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>AI is not working from backend</div>`;
+    }
 
     body.innerHTML = html;
     if (footer) footer.style.display = 'flex';
+
     document.getElementById('ddp-explain-more')?.addEventListener('click', () => {
-      requestDeeperExplanation(data, insights.pattern);
+      requestDeeperExplanation(data, insights, { costWrong, skillGain, whyAsk });
     });
     document.getElementById('ddp-mark-solved')?.addEventListener('click', () => {
       markSolved(data, insights);
     });
   }
 
-  // ── STEP 6: Deeper explanation — flat section appended ──
-  function requestDeeperExplanation(data, pattern) {
+  // ── STEP 6: Deep Dive — unique use case explanation appended ──
+  function requestDeeperExplanation(data, insights, extras) {
     document.getElementById('ddp-deeper')?.remove();
     const body = document.getElementById('ddp-body');
     if (!body) return;
 
     const loadDiv = document.createElement('div');
     loadDiv.id = 'ddp-deeper';
-    loadDiv.className = 'ddp-section';
+    loadDiv.className = 'ddp-deep-block';
     loadDiv.innerHTML = `
-      <div class="ddp-section-tag">${SVG.plus} Deep Dive</div>
-      <div class="ddp-loading" style="padding:16px 0;background:transparent">
-        <div class="ddp-spinner"></div><p>Loading analysis...</p>
+      <span class="ddp-deep-label">Deep Dive</span>
+      <div class="ddp-loading" style="padding:16px 0">
+        <div class="ddp-spinner"></div><p>Loading...</p>
       </div>`;
     body.appendChild(loadDiv);
     loadDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
     if (!chrome.runtime?.id) {
-      document.getElementById('ddp-deeper').innerHTML = `<div class="ddp-section-tag">${SVG.plus} Deep Dive</div><div class="ddp-section-body">Extension reloaded — refresh page to retry.</div>`;
+      loadDiv.innerHTML = `<span class="ddp-deep-label">Deep Dive</span><p class="ddp-deep-body">Extension reloaded — refresh page.</p>`;
       return;
     }
+
+    const pattern = typeof insights === 'string' ? insights : (insights?.pattern || '');
+
     chrome.runtime.sendMessage(
       { type: 'DEEPER_EXPLANATION', payload: { title: data.title, pattern } },
       (response) => {
         if (chrome.runtime.lastError) {
           const el = document.getElementById('ddp-deeper');
-          if (el) el.innerHTML = `<div class="ddp-section-tag">${SVG.plus} Deep Dive</div><div class="ddp-section-body">Extension reloaded — refresh page.</div>`;
+          if (el) el.innerHTML = `<span class="ddp-deep-label">Deep Dive</span><p class="ddp-deep-body">AI is not working from backend</p>`;
           return;
         }
         const el = document.getElementById('ddp-deeper');
         if (!el) return;
+
         if (response?.success) {
           const d = response.data;
-
-          // Filter out any backend error/placeholder strings
           const stale = (v) => !v || /unavailable|temporarily|refresh|retry|AI analysis/i.test(v);
 
-          const timeVal    = stale(d.timeComplexity)        ? null : d.timeComplexity;
-          const spaceVal   = stale(d.spaceComplexity)       ? null : d.spaceComplexity;
-          const sysDesign  = stale(d.systemDesignConnection)? null : d.systemDesignConnection;
-          const mentalMdl  = stale(d.mentalModel)           ? null : d.mentalModel;
-          const edges      = (d.edgeCases      || []).filter(e => !stale(e));
-          const followUps  = (d.followUpProblems || []).filter(p => !stale(p));
+          const sysDesign = stale(d.systemDesignConnection) ? null : d.systemDesignConnection;
+          const mental    = stale(d.mentalModel) ? null : d.mentalModel;
+          const edges     = (d.edgeCases || []).filter(e => !stale(e));
+          const followUps = (d.followUpProblems || []).filter(p => !stale(p));
+          const timeVal   = stale(d.timeComplexity) ? null : d.timeComplexity;
+          const spaceVal  = stale(d.spaceComplexity) ? null : d.spaceComplexity;
 
-          el.innerHTML = `
-            <div class="ddp-section-tag">Deep Dive</div>
-            ${(timeVal || spaceVal) ? `
-            <div class="ddp-complexity-row">
-              ${timeVal  ? `<div class="ddp-complexity-card"><div class="label">Time</div><div class="value">${timeVal}</div></div>`  : ''}
-              ${spaceVal ? `<div class="ddp-complexity-card"><div class="label">Space</div><div class="value">${spaceVal}</div></div>` : ''}
-            </div>` : ''}
-            ${sysDesign ? `<div class="ddp-deep-section"><div class="ddp-section-title-sm">System Design</div><p class="ddp-text">${sysDesign}</p></div>` : ''}
-            ${edges.length ? `<div class="ddp-deep-section"><div class="ddp-section-title-sm">Edge Cases</div><ul class="ddp-section-list">${edges.map(e=>`<li>${e}</li>`).join('')}</ul></div>` : ''}
-            ${followUps.length ? `<div class="ddp-deep-section"><div class="ddp-section-title-sm">Follow-Ups</div><div class="ddp-section-chips">${followUps.map(p=>`<span class="ddp-section-chip">${p}</span>`).join('')}</div></div>` : ''}
-            ${mentalMdl ? `<div class="ddp-deep-section"><div class="ddp-section-title-sm">Mental Model</div><p class="ddp-text" style="font-style:italic;margin-top:4px">${mentalMdl}</p></div>` : ''}
-          `;
+          // Also show any extras passed in from renderInsights
+          const costWrong = extras?.costWrong || '';
+          const skillGain = extras?.skillGain || '';
+          const whyAsk    = extras?.whyAsk || '';
 
+          let html = `<span class="ddp-deep-label">Deep Dive</span>`;
+
+          if (sysDesign) html += `<p class="ddp-deep-body">${sysDesign}</p>`;
+          if (mental)    html += `<p class="ddp-deep-body" style="font-style:italic">${mental}</p>`;
+          if (costWrong) html += `<p class="ddp-deep-body">${costWrong}</p>`;
+          if (skillGain) html += `<p class="ddp-deep-body">${skillGain}</p>`;
+          if (whyAsk)    html += `<p class="ddp-deep-body">${whyAsk}</p>`;
+
+          if (edges.length || followUps.length || timeVal || spaceVal) {
+            html += `<div class="ddp-deep-chips">`;
+            if (timeVal)  html += `<span class="ddp-deep-chip">Time: ${timeVal}</span>`;
+            if (spaceVal) html += `<span class="ddp-deep-chip">Space: ${spaceVal}</span>`;
+            edges.forEach(e => html += `<span class="ddp-deep-chip">${e}</span>`);
+            followUps.forEach(p => html += `<span class="ddp-deep-chip">${p}</span>`);
+            html += `</div>`;
+          }
+
+          if (!sysDesign && !mental && !costWrong && !skillGain && !whyAsk && !edges.length) {
+            html += `<p class="ddp-deep-body">AI is not working from backend</p>`;
+          }
+
+          el.innerHTML = html;
         } else {
-          el.innerHTML = `<div class="ddp-section-tag">${SVG.plus} Deep Dive</div><div class="ddp-section-body">Deep analysis unavailable.</div>`;
+          el.innerHTML = `<span class="ddp-deep-label">Deep Dive</span><p class="ddp-deep-body">AI is not working from backend</p>`;
         }
       }
     );
@@ -531,12 +513,10 @@
     const body = document.getElementById('ddp-body');
     if (body) {
       body.innerHTML = `
-        <div class="ddp-error-box">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <p>${message}</p>
-          <small>Backend: Railway may be cold-starting — retry in ~10 seconds</small>
-        </div>
-      `;
+        <div class="ddp-ai-error">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          AI is not working from backend
+        </div>`;
     }
   }
 
