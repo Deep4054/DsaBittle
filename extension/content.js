@@ -271,13 +271,24 @@
 
     const diffClass = (insights.difficulty || data.difficulty || 'unknown').toLowerCase();
 
-    const whySolve      = insights.whySolveThis || insights.whyMatters || '';
-    const realWorld     = insights.realWorldConnection || '';
+    const whySolve      = insights.whySolveThis || insights.whyMatters || insights.whyThisProblemMatters || '';
+    const realWorld     = insights.realWorldConnection || insights.problemSolves || '';
     const casualCases   = insights.casualUseCases || [];
+    const productsNeed  = insights.productsNeedThis || [];
     const whereUsed     = insights.whereUsed || insights.useCases || [];
+    const costWrong     = insights.costOfGettingWrong || '';
+    const skillGain     = insights.skillYouGain || '';
+    const prodReality   = insights.productionReality || '';
     const whyAsk        = insights.whyCompaniesAsk || '';
     const companies     = insights.companies || [];
     const analogy       = insights.analogy || '';
+
+    // Build product list — supports both {product, whyTheNeed} objects and plain strings
+    const productItems = productsNeed.map(p =>
+      typeof p === 'object' && p.product
+        ? `<li><strong>${p.product}:</strong> ${p.whyTheNeed}</li>`
+        : `<li>${p}</li>`
+    ).join('') || whereUsed.map(u => `<li>${u}</li>`).join('');
 
     body.innerHTML = `
       <div class="ddp-problem-meta">
@@ -292,35 +303,55 @@
       <div class="ddp-section ddp-realworld-box">
         <div class="ddp-section-title">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          You've Already Used This
+          What This Actually Solves
         </div>
         <p class="ddp-realworld-text">${realWorld}</p>
+      </div>` : ''}
+
+      ${productItems ? `
+      <div class="ddp-section">
+        <div class="ddp-section-title">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          Products That Need This
+        </div>
+        <ul class="ddp-list">${productItems}</ul>
       </div>` : ''}
 
       ${casualCases.length ? `
       <div class="ddp-section">
         <div class="ddp-section-title">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
           In Your Daily Life
         </div>
         <div class="ddp-casual-list">${casualCases.map(c => `<div class="ddp-casual-item">${c}</div>`).join('')}</div>
       </div>` : ''}
 
+      ${costWrong ? `
+      <div class="ddp-section ddp-cost-box">
+        <div class="ddp-section-title">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Cost of Getting It Wrong
+        </div>
+        <p class="ddp-text">${costWrong}</p>
+      </div>` : ''}
+
+      ${whySolve ? `
       <div class="ddp-section">
         <div class="ddp-section-title">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          Why Solve This?
+          Why This Matters
         </div>
         <div class="ddp-why-box"><p class="ddp-text">${whySolve}</p></div>
-      </div>
+      </div>` : ''}
 
+      ${skillGain ? `
       <div class="ddp-section">
         <div class="ddp-section-title">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-          Used In Production
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Skill You Gain
         </div>
-        <ul class="ddp-list">${whereUsed.map(u => `<li>${u}</li>`).join('')}</ul>
-      </div>
+        <p class="ddp-text">${skillGain}</p>
+      </div>` : ''}
 
       ${whyAsk ? `
       <div class="ddp-section">
@@ -331,21 +362,22 @@
         <p class="ddp-text">${whyAsk}</p>
       </div>` : ''}
 
+      ${companies.length ? `
       <div class="ddp-section">
         <div class="ddp-section-title">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
           Companies That Ask
         </div>
         <div class="ddp-chips">${companies.map(c => `<span class="ddp-chip">${c}</span>`).join('')}</div>
-      </div>
+      </div>` : ''}
 
-      ${analogy ? `
+      ${prodReality || analogy ? `
       <div class="ddp-section ddp-analogy-box">
         <div class="ddp-section-title">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-          Mental Model
+          ${prodReality ? 'Production Reality' : 'Analogy'}
         </div>
-        <p class="ddp-analogy-text">${analogy}</p>
+        <p class="ddp-analogy-text">${prodReality || analogy}</p>
       </div>` : ''}
     `;
 
