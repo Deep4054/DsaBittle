@@ -125,12 +125,32 @@ Return ONLY this JSON structure (no markdown):
 # ─────────────────────────────────────────────
 
 def parse_json_response(raw: str) -> dict:
-    """Strip markdown fences if present, then parse JSON."""
+    """Robustly extract a JSON object from LLM output.
+    Handles: plain JSON, markdown fences, leading/trailing text.
+    """
     raw = raw.strip()
-    # Remove ```json ``` or ``` ``` wrappers
-    raw = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
-    raw = re.sub(r'\s*```$', '', raw, flags=re.MULTILINE)
-    return json.loads(raw.strip())
+
+    # 1) Strip ```json ... ``` or ``` ... ``` wrappers
+    cleaned = re.sub(r'^```(?:json)?\s*', '', raw, flags=re.MULTILINE)
+    cleaned = re.sub(r'\s*```$', '', cleaned, flags=re.MULTILINE)
+    cleaned = cleaned.strip()
+
+    # 2) Try direct parse first
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        pass
+
+    # 3) Find the first {...} block (handles leading explanation text)
+    match = re.search(r'\{[\s\S]*\}', cleaned)
+    if match:
+        try:
+            return json.loads(match.group())
+        except json.JSONDecodeError:
+            pass
+
+    # 4) Give up — return empty dict so callers can use their own fallback
+    raise ValueError(f"Could not parse JSON from LLM response. Raw (first 300 chars): {raw[:300]}")
 
 
 # ─────────────────────────────────────────────
@@ -139,9 +159,9 @@ def parse_json_response(raw: str) -> dict:
 
 async def analyze_problem(data: ProblemInput) -> dict:
     """
-    Call GPT-4o-mini to analyze a DSA problem and return
+    Call NVIDIA NIM to analyze a DSA problem and return
     real-world context, pattern, companies, analogy, and use cases.
-    Fast + cheap for per-problem calls.
+    Falls back to a cached response if the AI call or parsing fails.
     """
     tags_str = ", ".join(data.tags) if data.tags else "None provided"
     desc_str = (data.description or "")[:600]
@@ -153,45 +173,66 @@ async def analyze_problem(data: ProblemInput) -> dict:
         description=desc_str,
     )
 
-    response = await _get_client().chat.completions.create(
-        model=FAST_MODEL,
-        messages=[
-            {
-                "role": "system",
-                "content": "You are an expert DSA teacher. Always respond with valid JSON only. No markdown, no explanation — pure JSON.",
-            },
-            {"role": "user", "content": prompt},
-        ],
-        temperature=0.7,
-        max_tokens=700,
-    )
+    try:
+        response = await _get_client().chat.completions.create(
+            model=FAST_MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert DSA teacher. Always respond with valid JSON only. No markdown, no explanation — pure JSON.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.7,
+            max_tokens=700,
+        )
 
-    raw = response.choices[0].message.content.strip()
-    return parse_json_response(raw)
+        raw = response.choices[0].message.content.strip()
+        return parse_json_response(raw)
+
+    except Exception as e:
+        # Return a sensible fallback so the extension still works
+        import logging
+        logging.getLogger("dsa-engine").warning(
+            f"analyze_problem AI call failed ({type(e).__name__}: {e}) — returning fallback"
+        )
+        return _fallback_analysis(data)
 
 
 async def get_deeper_explanation(title: str, pattern: str) -> dict:
     """
-    Call GPT-4o (smarter) for deep-dive analysis:
-    system design connections, edge cases, complexity, follow-ups.
+    Deep-dive analysis: system design connections, edge cases, complexity, follow-ups.
     """
     prompt = DEEPER_PROMPT.format(title=title, pattern=pattern or "General")
 
-    response = await _get_client().chat.completions.create(
-        model=POWER_MODEL,
-        messages=[
-            {
-                "role": "system",
-                "content": "You are a senior FAANG engineer doing interview prep coaching. Respond with valid JSON only. No markdown, no explanation — pure JSON.",
-            },
-            {"role": "user", "content": prompt},
-        ],
-        temperature=0.5,
-        max_tokens=900,
-    )
-
-    raw = response.choices[0].message.content.strip()
-    return parse_json_response(raw)
+    try:
+        response = await _get_client().chat.completions.create(
+            model=POWER_MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a senior FAANG engineer doing interview prep coaching. Respond with valid JSON only. No markdown, no explanation — pure JSON.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.5,
+            max_tokens=900,
+        )
+        raw = response.choices[0].message.content.strip()
+        return parse_json_response(raw)
+    except Exception as e:
+        import logging
+        logging.getLogger("dsa-engine").warning(
+            f"get_deeper_explanation AI call failed ({type(e).__name__}: {e}) — returning fallback"
+        )
+        return {
+            "timeComplexity": "O(n) — analysis unavailable",
+            "spaceComplexity": "O(1) — analysis unavailable",
+            "systemDesignConnection": "AI analysis temporarily unavailable. Try again shortly.",
+            "edgeCases": ["Empty input", "Single element", "Overflow / large numbers"],
+            "followUpProblems": ["Related problem on LeetCode"],
+            "mentalModel": "Identify the pattern, define constraints, then optimize step by step."
+        }
 
 
 async def generate_daily_report(history: list, stats: dict) -> dict:
@@ -271,3 +312,51 @@ def _get_slowest_tags(tag_stats: dict, n: int = 3) -> list:
         {"tag": k, "avgTimeMinutes": round(v.get("avgTime", 0) / 60, 1)}
         for k, v in sorted_tags[:n]
     ]
+
+
+def _fallback_analysis(data: ProblemInput) -> dict:
+    """Return a cached fallback when AI is unavailable."""
+    pattern_map = {
+        "array": "Array Traversal",
+        "hash table": "Hash Map Lookup",
+        "sliding window": "Sliding Window",
+        "dynamic programming": "Dynamic Programming",
+        "graph": "Graph Traversal (BFS/DFS)",
+        "tree": "Tree DFS/BFS",
+        "binary search": "Binary Search",
+        "two pointers": "Two Pointers",
+        "stack": "Monotonic Stack",
+        "heap": "Priority Queue / Heap",
+        "linked list": "Linked List Pointer",
+        "string": "String Manipulation",
+        "math": "Mathematical Reasoning",
+        "backtracking": "Backtracking / Recursion",
+        "greedy": "Greedy Algorithm",
+    }
+    tags_lower = [t.lower() for t in (data.tags or [])]
+    pattern = "General Problem Solving"
+    for key, val in pattern_map.items():
+        if any(key in t for t in tags_lower):
+            pattern = val
+            break
+
+    return {
+        "pattern": pattern,
+        "difficulty": data.difficulty or "Unknown",
+        "whySolveThis": (
+            f"This {pattern} problem is a core interview pattern. "
+            "Mastering it unlocks a whole category of similar problems at FAANG. "
+            "⚠️ AI offline — showing cached insights."
+        ),
+        "whereUsed": [
+            "Google Search: uses this pattern for query index traversal at scale",
+            "Amazon: applies it in recommendation engine filtering pipelines",
+            "Netflix: uses it for real-time content ranking across regions",
+        ],
+        "whyCompaniesAsk": (
+            "This pattern tests your ability to recognize structure in data and apply "
+            "an optimal algorithm — exactly what production engineers do daily."
+        ),
+        "companies": ["Google", "Amazon", "Microsoft", "Meta", "Apple"],
+        "analogy": "⚠️ AI temporarily unavailable — try refreshing in 30 seconds.",
+    }
